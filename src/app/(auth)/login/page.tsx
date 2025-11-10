@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,14 +34,29 @@ export default function LoginPage() {
       return;
     }
 
-    // TODO: Supabase authentication will be implemented here
-    console.log('Login attempt:', { email, password });
+    try {
+      const supabase = createClient();
 
-    // Simulating API call
-    setTimeout(() => {
-      // For now, redirect to dashboard (will be replaced with real auth)
-      router.push('/dashboard');
-    }, 1000);
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Success! Redirect to dashboard
+        router.push('/dashboard');
+        router.refresh();
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (

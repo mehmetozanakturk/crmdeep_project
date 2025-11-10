@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,14 +51,34 @@ export default function RegisterPage() {
       return;
     }
 
-    // TODO: Supabase registration will be implemented here
-    console.log('Registration attempt:', formData);
+    try {
+      const supabase = createClient();
 
-    // Simulating API call
-    setTimeout(() => {
-      // For now, redirect to dashboard (will be replaced with real auth)
-      router.push('/dashboard');
-    }, 1000);
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          },
+        },
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        // Success! Redirect to dashboard
+        router.push('/dashboard');
+        router.refresh();
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
