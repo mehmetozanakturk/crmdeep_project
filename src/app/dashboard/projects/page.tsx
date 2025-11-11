@@ -1,12 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Plus,
   FolderKanban,
@@ -17,9 +25,13 @@ import {
   Clock,
   AlertCircle,
   MoreVertical,
+  Edit,
+  Trash2,
 } from 'lucide-react';
+import { AddProjectModal } from '@/components/projects/AddProjectModal';
+import { EditProjectModal } from '@/components/projects/EditProjectModal';
 
-interface Project {
+export interface Project {
   id: string;
   name: string;
   description: string;
@@ -32,7 +44,11 @@ interface Project {
   tasksCompleted: number;
   brand: string;
   priority: 'low' | 'medium' | 'high';
+  created_at: string;
+  updated_at: string;
 }
+
+const STORAGE_KEY = 'crmdeep_projects';
 
 const DEMO_PROJECTS: Project[] = [
   {
@@ -52,6 +68,8 @@ const DEMO_PROJECTS: Project[] = [
     tasksCompleted: 16,
     brand: 'TechCorp',
     priority: 'high',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '2',
@@ -69,6 +87,8 @@ const DEMO_PROJECTS: Project[] = [
     tasksCompleted: 8,
     brand: 'GreenLife',
     priority: 'medium',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '3',
@@ -88,6 +108,8 @@ const DEMO_PROJECTS: Project[] = [
     tasksCompleted: 10,
     brand: 'BlueSky Airlines',
     priority: 'high',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '4',
@@ -104,6 +126,8 @@ const DEMO_PROJECTS: Project[] = [
     tasksCompleted: 3,
     brand: 'StyleHub',
     priority: 'low',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '5',
@@ -121,6 +145,8 @@ const DEMO_PROJECTS: Project[] = [
     tasksCompleted: 16,
     brand: 'AutoMax',
     priority: 'high',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '6',
@@ -139,12 +165,54 @@ const DEMO_PROJECTS: Project[] = [
     tasksCompleted: 28,
     brand: 'EduPro',
     priority: 'medium',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>(DEMO_PROJECTS);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setProjects(JSON.parse(stored));
+    } else {
+      setProjects(DEMO_PROJECTS);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_PROJECTS));
+    }
+  }, []);
+
+  // Save to localStorage whenever projects change
+  useEffect(() => {
+    if (projects.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    }
+  }, [projects]);
+
+  const handleProjectAdded = (newProject: Project) => {
+    setProjects([newProject, ...projects]);
+  };
+
+  const handleProjectUpdated = (updatedProject: Project) => {
+    setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    if (confirm('Bu projeyi silmek istediğinizden emin misiniz?')) {
+      setProjects(projects.filter(p => p.id !== projectId));
+    }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setSelectedProject(project);
+    setEditModalOpen(true);
+  };
 
   const filteredProjects = projects.filter((project) =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -208,7 +276,7 @@ export default function ProjectsPage() {
             Tüm projelerinizi tek yerden takip edin
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setAddModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Yeni Proje
         </Button>
@@ -318,9 +386,28 @@ export default function ProjectsPage() {
                     {getPriorityBadge(project.priority)}
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleEditProject(project)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Düzenle
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteProject(project.id)}
+                      className="text-danger-600 dark:text-danger-400"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Sil
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -413,6 +500,23 @@ export default function ProjectsPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Add Project Modal */}
+      <AddProjectModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        onProjectAdded={handleProjectAdded}
+      />
+
+      {/* Edit Project Modal */}
+      {selectedProject && (
+        <EditProjectModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          project={selectedProject}
+          onProjectUpdated={handleProjectUpdated}
+        />
       )}
     </div>
   );
