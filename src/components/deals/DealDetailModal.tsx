@@ -106,7 +106,7 @@ export function DealDetailModal({
             <Badge className={getStageColor(deal.stage)}>
               {getStageLabel(deal.stage)}
             </Badge>
-            <Badge variant="outline" className="bg-primary-50 dark:bg-primary-900/20">
+            <Badge variant="outline" className="bg-primary-50 dark:bg-primary-950">
               <TrendingUp className="mr-1 h-3 w-3" />
               %{deal.probability} Olasılık
             </Badge>
@@ -221,21 +221,21 @@ export function DealDetailModal({
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800">
-              <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-1">
+            <div className="p-4 rounded-lg bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-700">
+              <div className="flex items-center gap-2 text-primary-700 dark:text-primary-300 mb-1">
                 <Calendar className="h-4 w-4" />
                 <span className="text-xs font-medium">Aşamada</span>
               </div>
-              <p className="text-2xl font-bold text-primary-700 dark:text-primary-300">
+              <p className="text-2xl font-bold text-primary-800 dark:text-primary-200">
                 {deal.daysInStage} gün
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800">
-              <div className="flex items-center gap-2 text-success-600 dark:text-success-400 mb-1">
+            <div className="p-4 rounded-lg bg-success-50 dark:bg-success-950 border border-success-200 dark:border-success-700">
+              <div className="flex items-center gap-2 text-success-700 dark:text-success-300 mb-1">
                 <Target className="h-4 w-4" />
                 <span className="text-xs font-medium">Beklenen</span>
               </div>
-              <p className="text-lg font-bold text-success-700 dark:text-success-300">
+              <p className="text-lg font-bold text-success-800 dark:text-success-200">
                 {formatCurrency(deal.value * (deal.probability / 100))}
               </p>
             </div>
