@@ -311,119 +311,104 @@ export default function DealsPage() {
         </Card>
       </div>
 
-      {/* Kanban Board */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {stages.map((stage) => {
-          const stageDeals = getDealsByStage(stage.key);
-          const stageTotal = getStageTotal(stage.key);
+      {/* Kanban Board - Compact 6 Column Layout */}
+      <div className="overflow-x-auto">
+        <div className="flex gap-3 pb-4 min-w-max">
+          {stages.map((stage) => {
+            const stageDeals = getDealsByStage(stage.key);
+            const stageTotal = getStageTotal(stage.key);
 
-          return (
-            <div key={stage.key}>
-                <Card className="border-neutral-200 dark:border-neutral-700">
-                  <CardHeader className={`${stage.color} rounded-t-lg border-b border-neutral-200 dark:border-neutral-700`}>
+            return (
+              <div key={stage.key} className="w-56 flex-shrink-0">
+                <Card className="border-neutral-200 dark:border-neutral-700 h-full">
+                  <CardHeader className={`${stage.color} rounded-t-lg border-b border-neutral-200 dark:border-neutral-700 pb-3`}>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{stage.label}</CardTitle>
-                      <Badge variant="secondary">{stageDeals.length}</Badge>
+                      <CardTitle className="text-sm font-semibold">{stage.label}</CardTitle>
+                      <Badge variant="secondary" className="text-xs">{stageDeals.length}</Badge>
                     </div>
-                    <CardDescription className="font-semibold dark:text-current">
+                    <CardDescription className="text-xs font-semibold dark:text-current mt-1">
                       {formatCurrency(stageTotal)}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-4 bg-neutral-50 dark:bg-neutral-900/50 min-h-[200px]">
+                  <CardContent className="space-y-2 pt-3 bg-neutral-50 dark:bg-neutral-900/50 min-h-[300px] max-h-[600px] overflow-y-auto">
                     {stageDeals.map((deal) => (
                       <Card
                         key={deal.id}
-                        className="cursor-pointer transition-shadow hover:shadow-md border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800"
+                        className="cursor-pointer transition-all hover:shadow-sm hover:border-primary-300 dark:hover:border-primary-700 border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800"
                         onClick={() => handleViewDeal(deal)}
                       >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 pr-2">{deal.title}</h3>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEditDeal(deal)}>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  Düzenle
-                                </DropdownMenuItem>
-                                <DropdownMenuSub>
-                                  <DropdownMenuSubTrigger>
-                                    <MoveRight className="mr-2 h-4 w-4" />
-                                    Aşamayı Değiştir
-                                  </DropdownMenuSubTrigger>
-                                  <DropdownMenuSubContent>
-                                    {stages.filter(s => s.key !== deal.stage).map((s) => (
-                                      <DropdownMenuItem
-                                        key={s.key}
-                                        onClick={() => handleMoveStage(deal.id, s.key)}
-                                      >
-                                        {s.label}
-                                      </DropdownMenuItem>
-                                    ))}
-                                  </DropdownMenuSubContent>
-                                </DropdownMenuSub>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteDeal(deal.id)}
-                                  className="text-danger-600 dark:text-danger-400"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Sil
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-
-                          <div className="mt-2 space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                              <Building2 className="h-4 w-4" />
-                              <span className="truncate">{deal.company}</span>
+                        <CardContent className="p-3">
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 flex-1">
+                                {deal.title}
+                              </h3>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="ghost" size="sm" className="h-5 w-5 p-0 flex-shrink-0">
+                                    <MoreVertical className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEditDeal(deal);
+                                  }}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Düzenle
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>
+                                      <MoveRight className="mr-2 h-4 w-4" />
+                                      Aşamayı Değiştir
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                      {stages.filter(s => s.key !== deal.stage).map((s) => (
+                                        <DropdownMenuItem
+                                          key={s.key}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleMoveStage(deal.id, s.key);
+                                          }}
+                                        >
+                                          {s.label}
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuSub>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteDeal(deal.id);
+                                    }}
+                                    className="text-danger-600 dark:text-danger-400"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Sil
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                              <User className="h-4 w-4" />
-                              <span className="truncate">{deal.contactPerson}</span>
+
+                            <div className="flex items-baseline justify-between">
+                              <p className="text-base font-bold text-primary-600 dark:text-primary-400">
+                                {formatCurrency(deal.value)}
+                              </p>
+                              <Badge variant="outline" className="text-xs">{deal.probability}%</Badge>
+                            </div>
+
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                              {deal.company}
                             </div>
                           </div>
-
-                          <div className="mt-3 flex items-center justify-between">
-                            <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                              {formatCurrency(deal.value)}
-                            </p>
-                            <Badge variant="outline">{deal.probability}%</Badge>
-                          </div>
-
-                          <div className="mt-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-                              <Clock className="h-3 w-3" />
-                              {deal.daysInStage} gün
-                            </div>
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="bg-primary-100 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400">
-                                {deal.assignee.substring(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-
-                          {deal.tags.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-1">
-                              {deal.tags.map((tag) => (
-                                <Badge key={tag} variant="secondary" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
                         </CardContent>
                       </Card>
                     ))}
 
                     {stageDeals.length === 0 && (
-                      <div className="py-8 text-center">
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Fırsat yok</p>
+                      <div className="py-6 text-center">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Fırsat yok</p>
                       </div>
                     )}
                   </CardContent>
@@ -431,6 +416,7 @@ export default function DealsPage() {
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* Add Deal Modal */}
