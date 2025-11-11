@@ -6,6 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -21,6 +28,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Calendar,
+  CalendarPlus,
   User,
   Paperclip,
   MessageSquare,
@@ -28,6 +36,12 @@ import {
   Edit,
   Trash2,
   ArrowRight,
+  LayoutGrid,
+  List,
+  CalendarDays,
+  Filter,
+  SortAsc,
+  SortDesc,
 } from 'lucide-react';
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
@@ -44,9 +58,14 @@ export interface Task {
   tags: string[];
   attachments: number;
   comments: number;
+  inCalendar?: boolean;
   created_at: string;
   updated_at: string;
 }
+
+type ViewMode = 'board' | 'list' | 'timeline';
+type DateFilter = 'all' | 'today' | 'week' | 'month' | 'overdue';
+type SortBy = 'dueDate' | 'priority' | 'created' | 'title';
 
 const STORAGE_KEY = 'crmdeep_tasks';
 
@@ -265,6 +284,12 @@ export default function TasksPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('board');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortBy>('dueDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -311,8 +336,100 @@ export default function TasksPage() {
     setEditModalOpen(true);
   };
 
+  const handleToggleCalendar = (taskId: string) => {
+    setTasks(tasks.map(t =>
+      t.id === taskId
+        ? { ...t, inCalendar: !t.inCalendar, updated_at: new Date().toISOString() }
+        : t
+    ));
+  };
+
+  // Filter tasks by date range
+  const filterByDate = (tasks: Task[]) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const monthFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    switch (dateFilter) {
+      case 'today':
+        return tasks.filter(t => {
+          const dueDate = new Date(t.dueDate);
+          return dueDate.toDateString() === today.toDateString();
+        });
+      case 'week':
+        return tasks.filter(t => {
+          const dueDate = new Date(t.dueDate);
+          return dueDate >= today && dueDate <= weekFromNow;
+        });
+      case 'month':
+        return tasks.filter(t => {
+          const dueDate = new Date(t.dueDate);
+          return dueDate >= today && dueDate <= monthFromNow;
+        });
+      case 'overdue':
+        return tasks.filter(t => {
+          const dueDate = new Date(t.dueDate);
+          return dueDate < today && t.status !== 'done';
+        });
+      default:
+        return tasks;
+    }
+  };
+
+  // Sort tasks
+  const sortTasks = (tasks: Task[]) => {
+    const sorted = [...tasks].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'dueDate':
+          comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          break;
+        case 'priority':
+          const priorityOrder = { high: 3, medium: 2, low: 1 };
+          comparison = priorityOrder[b.priority] - priorityOrder[a.priority];
+          break;
+        case 'created':
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case 'title':
+          comparison = a.title.localeCompare(b.title, 'tr');
+          break;
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+  };
+
+  // Get filtered and sorted tasks
+  const getFilteredTasks = () => {
+    let filtered = tasks;
+
+    // Apply date filter
+    filtered = filterByDate(filtered);
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(t => t.status === statusFilter);
+    }
+
+    // Apply priority filter
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(t => t.priority === priorityFilter);
+    }
+
+    // Apply sorting
+    filtered = sortTasks(filtered);
+
+    return filtered;
+  };
+
   const getTasksByStatus = (status: Task['status']) => {
-    return tasks.filter((task) => task.status === status);
+    const filtered = getFilteredTasks();
+    return filtered.filter((task) => task.status === status);
   };
 
   const getPriorityColor = (priority: Task['priority']) => {
@@ -344,17 +461,116 @@ export default function TasksPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Görevler</h1>
-          <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-            Tüm görevlerinizi kanban board ile yönetin
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Görevler</h1>
+            <p className="mt-1 text-neutral-600 dark:text-neutral-400">
+              Görevlerinizi yönetin, filtreleyin ve takvime ekleyin
+            </p>
+          </div>
+          <Button onClick={() => setAddModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Yeni Görev
+          </Button>
         </div>
-        <Button onClick={() => setAddModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Yeni Görev
-        </Button>
+
+        {/* Filters and View Options */}
+        <div className="flex flex-wrap items-center gap-3 p-4 bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700">
+          {/* View Mode */}
+          <div className="flex items-center gap-2 border-r border-neutral-200 dark:border-neutral-700 pr-3">
+            <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Görünüm:</span>
+            <div className="flex rounded-md border border-neutral-200 dark:border-neutral-700">
+              <Button
+                variant={viewMode === 'board' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('board')}
+                className="rounded-r-none"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="rounded-none border-x border-neutral-200 dark:border-neutral-700"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'timeline' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('timeline')}
+                className="rounded-l-none"
+              >
+                <CalendarDays className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Date Filter */}
+          <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Tarih filtrele" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Görevler</SelectItem>
+              <SelectItem value="today">Bugün</SelectItem>
+              <SelectItem value="week">Bu Hafta</SelectItem>
+              <SelectItem value="month">Bu Ay</SelectItem>
+              <SelectItem value="overdue">Gecikmiş</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Durum" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Durumlar</SelectItem>
+              <SelectItem value="todo">Yapılacak</SelectItem>
+              <SelectItem value="in-progress">Devam Ediyor</SelectItem>
+              <SelectItem value="review">İncelemede</SelectItem>
+              <SelectItem value="done">Tamamlandı</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Priority Filter */}
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Öncelik" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Öncelikler</SelectItem>
+              <SelectItem value="high">Yüksek</SelectItem>
+              <SelectItem value="medium">Orta</SelectItem>
+              <SelectItem value="low">Düşük</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Sort Options */}
+          <div className="flex items-center gap-2 border-l border-neutral-200 dark:border-neutral-700 pl-3">
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Sırala" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dueDate">Bitiş Tarihi</SelectItem>
+                <SelectItem value="priority">Öncelik</SelectItem>
+                <SelectItem value="created">Oluşturma</SelectItem>
+                <SelectItem value="title">İsim</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
@@ -480,6 +696,10 @@ export default function TasksPage() {
                                   <Edit className="mr-2 h-4 w-4" />
                                   Düzenle
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleToggleCalendar(task.id)}>
+                                  <CalendarPlus className="mr-2 h-4 w-4" />
+                                  {task.inCalendar ? 'Takvimden Kaldır' : 'Takvime Ekle'}
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuLabel>Durumu Değiştir</DropdownMenuLabel>
                                 {COLUMNS.filter(col => col.key !== task.status).map(col => (
@@ -527,21 +747,28 @@ export default function TasksPage() {
                         📁 {task.project}
                       </div>
 
-                      {/* Due Date */}
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3 text-neutral-500 dark:text-neutral-400" />
-                        <span
-                          className={`text-xs ${
-                            isOverdue(task.dueDate) && task.status !== 'done'
-                              ? 'text-danger-600 dark:text-danger-400 font-semibold'
-                              : 'text-neutral-600 dark:text-neutral-400'
-                          }`}
-                        >
-                          {new Date(task.dueDate).toLocaleDateString('tr-TR', {
-                            day: 'numeric',
-                            month: 'short',
-                          })}
-                        </span>
+                      {/* Due Date and Calendar Badge */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3 text-neutral-500 dark:text-neutral-400" />
+                          <span
+                            className={`text-xs ${
+                              isOverdue(task.dueDate) && task.status !== 'done'
+                                ? 'text-danger-600 dark:text-danger-400 font-semibold'
+                                : 'text-neutral-600 dark:text-neutral-400'
+                            }`}
+                          >
+                            {new Date(task.dueDate).toLocaleDateString('tr-TR', {
+                              day: 'numeric',
+                              month: 'short',
+                            })}
+                          </span>
+                        </div>
+                        {task.inCalendar && (
+                          <Badge variant="secondary" className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                            📅 Takvimde
+                          </Badge>
+                        )}
                       </div>
 
                       {/* Footer */}
