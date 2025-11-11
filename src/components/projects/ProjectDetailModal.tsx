@@ -212,30 +212,30 @@ export function ProjectDetailModal({
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="p-4 rounded-lg bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800">
-              <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 mb-1">
+            <div className="p-4 rounded-lg bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-700">
+              <div className="flex items-center gap-2 text-primary-700 dark:text-primary-300 mb-1">
                 <Target className="h-4 w-4" />
                 <span className="text-xs font-medium">Tamamlanma</span>
               </div>
-              <p className="text-2xl font-bold text-primary-700 dark:text-primary-300">
+              <p className="text-2xl font-bold text-primary-800 dark:text-primary-200">
                 %{Math.round((project.tasksCompleted / project.tasksTotal) * 100)}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800">
-              <div className="flex items-center gap-2 text-success-600 dark:text-success-400 mb-1">
+            <div className="p-4 rounded-lg bg-success-50 dark:bg-success-950 border border-success-200 dark:border-success-700">
+              <div className="flex items-center gap-2 text-success-700 dark:text-success-300 mb-1">
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="text-xs font-medium">Tamamlanan</span>
               </div>
-              <p className="text-2xl font-bold text-success-700 dark:text-success-300">
+              <p className="text-2xl font-bold text-success-800 dark:text-success-200">
                 {project.tasksCompleted}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-              <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 mb-1">
+            <div className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
+              <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-300 mb-1">
                 <Users className="h-4 w-4" />
                 <span className="text-xs font-medium">Ekip</span>
               </div>
-              <p className="text-2xl font-bold text-neutral-700 dark:text-neutral-300">
+              <p className="text-2xl font-bold text-neutral-800 dark:text-neutral-200">
                 {project.teamMembers.length}
               </p>
             </div>

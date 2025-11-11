@@ -122,9 +122,9 @@ export function DealDetailModal({
               Fırsat Değeri
             </h3>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800">
-                <DollarSign className="h-6 w-6 text-success-600 dark:text-success-400" />
-                <span className="text-2xl font-bold text-success-700 dark:text-success-300">
+              <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-success-50 dark:bg-success-950 border border-success-200 dark:border-success-700">
+                <DollarSign className="h-6 w-6 text-success-700 dark:text-success-300" />
+                <span className="text-2xl font-bold text-success-800 dark:text-success-200">
                   {formatCurrency(deal.value)}
                 </span>
               </div>

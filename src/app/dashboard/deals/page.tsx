@@ -312,14 +312,13 @@ export default function DealsPage() {
       </div>
 
       {/* Kanban Board */}
-      <div className="overflow-x-auto">
-        <div className="flex gap-4 pb-4" style={{ minWidth: 'max-content' }}>
-          {stages.map((stage) => {
-            const stageDeals = getDealsByStage(stage.key);
-            const stageTotal = getStageTotal(stage.key);
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {stages.map((stage) => {
+          const stageDeals = getDealsByStage(stage.key);
+          const stageTotal = getStageTotal(stage.key);
 
-            return (
-              <div key={stage.key} className="w-80 flex-shrink-0">
+          return (
+            <div key={stage.key}>
                 <Card className="border-neutral-200 dark:border-neutral-700">
                   <CardHeader className={`${stage.color} rounded-t-lg border-b border-neutral-200 dark:border-neutral-700`}>
                     <div className="flex items-center justify-between">
@@ -429,10 +428,9 @@ export default function DealsPage() {
                     )}
                   </CardContent>
                 </Card>
-              </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Add Deal Modal */}
