@@ -16,13 +16,17 @@ import {
   MoreVertical,
   UserPlus,
   Filter,
+  Target,
+  Star,
 } from 'lucide-react';
+import { AddContactModal } from '@/components/contacts/AddContactModal';
 
 export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // TODO: Load from Supabase
-  const contacts = [
+  const [contacts, setContacts] = useState([
     {
       id: '1',
       name: 'Sarah Johnson',
@@ -78,7 +82,7 @@ export default function ContactsPage() {
       avatar: '',
       lastContact: '2 weeks ago',
     },
-  ];
+  ]);
 
   const filteredContacts = contacts.filter(
     (contact) =>
@@ -86,6 +90,10 @@ export default function ContactsPage() {
       contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contact.company.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleContactAdded = (newContact: any) => {
+    setContacts([newContact, ...contacts]);
+  };
 
   const stats = [
     { label: 'Toplam Kişi', value: contacts.length, icon: Users, color: 'text-primary-600' },
@@ -99,10 +107,12 @@ export default function ContactsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Kişiler</h1>
-          <p className="mt-1 text-neutral-600">İrtibatlar ve iletişim bilgilerini yönetin</p>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Kişiler</h1>
+          <p className="mt-1 text-neutral-600 dark:text-neutral-400">
+            İrtibatlar ve iletişim bilgilerini yönetin
+          </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="h-4 w-4" />
           Yeni Kişi
         </Button>
@@ -117,10 +127,14 @@ export default function ContactsPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-neutral-600">{stat.label}</p>
-                    <p className="mt-1 text-3xl font-bold text-neutral-900">{stat.value}</p>
+                    <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                      {stat.label}
+                    </p>
+                    <p className="mt-1 text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {stat.value}
+                    </p>
                   </div>
-                  <div className={`rounded-lg bg-neutral-100 p-3 ${stat.color}`}>
+                  <div className={`rounded-lg bg-neutral-100 p-3 dark:bg-neutral-700 ${stat.color}`}>
                     <Icon className="h-6 w-6" />
                   </div>
                 </div>
@@ -162,12 +176,12 @@ export default function ContactsPage() {
             {filteredContacts.map((contact) => (
               <div
                 key={contact.id}
-                className="flex items-center justify-between rounded-lg border border-neutral-200 p-4 transition-colors hover:bg-neutral-50"
+                className="flex items-center justify-between rounded-lg border border-neutral-200 p-4 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:hover:bg-neutral-700/50"
               >
                 <div className="flex items-center gap-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={contact.avatar} />
-                    <AvatarFallback className="bg-primary-100 text-primary-600">
+                    <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
                       {contact.name
                         .split(' ')
                         .map((n) => n[0])
@@ -175,11 +189,13 @@ export default function ContactsPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-semibold text-neutral-900">{contact.name}</h3>
-                    <p className="text-sm text-neutral-600">
+                    <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      {contact.name}
+                    </h3>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
                       {contact.position} at {contact.company}
                     </p>
-                    <div className="mt-1 flex items-center gap-3 text-xs text-neutral-500">
+                    <div className="mt-1 flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
                       <span className="flex items-center gap-1">
                         <Mail className="h-3 w-3" />
                         {contact.email}
@@ -199,7 +215,9 @@ export default function ContactsPage() {
                       </Badge>
                     ))}
                   </div>
-                  <div className="text-xs text-neutral-500">{contact.lastContact}</div>
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {contact.lastContact}
+                  </div>
                   <Button variant="ghost" size="sm">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
@@ -211,17 +229,23 @@ export default function ContactsPage() {
           {filteredContacts.length === 0 && (
             <div className="py-12 text-center">
               <Users className="mx-auto h-12 w-12 text-neutral-400" />
-              <h3 className="mt-4 text-lg font-semibold text-neutral-900">Kişi bulunamadı</h3>
-              <p className="mt-2 text-sm text-neutral-600">
+              <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Kişi bulunamadı
+              </h3>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
                 Arama kriterlerinize uygun kişi yok. Farklı bir arama deneyin.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Add Contact Modal */}
+      <AddContactModal
+        open={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onContactAdded={handleContactAdded}
+      />
     </div>
   );
 }
-
-// Missing imports for demo (will be added when implementing real functionality)
-import { Target, Star } from 'lucide-react';
