@@ -13,7 +13,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Plus, Search, Mail, Phone, Building2, TrendingUp, Users, Target, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Plus, Search, Mail, Phone, Building2, TrendingUp, Users, Target, MoreVertical, Pencil, Trash2, ArrowUpDown, Filter } from 'lucide-react';
 import { AddLeadModal } from '@/components/leads/AddLeadModal';
 import { EditLeadModal } from '@/components/leads/EditLeadModal';
 import { LeadDetailModal } from '@/components/leads/LeadDetailModal';
@@ -93,6 +100,8 @@ const STORAGE_KEY = 'crmdeep_leads';
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<string>('score_desc');
+  const [groupBy, setGroupBy] = useState<string>('none');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -165,6 +174,75 @@ export default function LeadsPage() {
     setDetailModalOpen(true);
   };
 
+  // Filter and sort leads
+  const getFilteredAndSortedLeads = () => {
+    let filtered = leads.filter(
+      (lead) =>
+        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.company.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Sort
+    filtered = filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'score_desc':
+          return b.score - a.score;
+        case 'score_asc':
+          return a.score - b.score;
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'company':
+          return a.company.localeCompare(b.company);
+        default:
+          return b.score - a.score;
+      }
+    });
+
+    return filtered;
+  };
+
+  // Group leads
+  const getGroupedLeads = () => {
+    const filtered = getFilteredAndSortedLeads();
+
+    if (groupBy === 'none') {
+      return { 'Tüm Leadler': filtered };
+    }
+
+    const grouped: Record<string, Lead[]> = {};
+
+    filtered.forEach((lead) => {
+      let groupKey = '';
+
+      switch (groupBy) {
+        case 'status':
+          groupKey = lead.status === 'new' ? 'Yeni' :
+                     lead.status === 'contacted' ? 'İletişimde' :
+                     lead.status === 'qualified' ? 'Nitelikli' : 'Niteliksiz';
+          break;
+        case 'source':
+          groupKey = lead.source;
+          break;
+        case 'score':
+          groupKey = lead.score >= 80 ? 'Yüksek Skor (80+)' :
+                     lead.score >= 60 ? 'Orta Skor (60-79)' :
+                     lead.score >= 40 ? 'Düşük Skor (40-59)' : 'Çok Düşük Skor (<40)';
+          break;
+        default:
+          groupKey = 'Tüm Leadler';
+      }
+
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = [];
+      }
+      grouped[groupKey].push(lead);
+    });
+
+    return grouped;
+  };
+
+  const groupedLeads = getGroupedLeads();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -232,19 +310,58 @@ export default function LeadsPage() {
         </Card>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
-        <Input
-          type="text"
-          placeholder="Lead ara..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+          <Input
+            type="text"
+            placeholder="Lead ara..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Sırala" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="score_desc">Skor (Yüksek)</SelectItem>
+              <SelectItem value="score_asc">Skor (Düşük)</SelectItem>
+              <SelectItem value="name">İsim (A-Z)</SelectItem>
+              <SelectItem value="company">Firma (A-Z)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={groupBy} onValueChange={setGroupBy}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Grupla" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Gruplama Yok</SelectItem>
+              <SelectItem value="status">Duruma Göre</SelectItem>
+              <SelectItem value="source">Kaynağa Göre</SelectItem>
+              <SelectItem value="score">Skora Göre</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="grid gap-4">
-        {filteredLeads.map((lead) => (
+      {/* Leads Grid - Grouped */}
+      {Object.entries(groupedLeads).map(([groupName, groupLeads]) => (
+        <div key={groupName} className="space-y-4">
+          {groupBy !== 'none' && (
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              {groupName}
+              <Badge variant="secondary">{groupLeads.length}</Badge>
+            </h2>
+          )}
+          <div className="grid gap-4">
+            {groupLeads.map((lead) => (
           <Card
             key={lead.id}
             className="border-neutral-200 dark:border-neutral-700 cursor-pointer transition-shadow hover:shadow-md"
@@ -324,8 +441,24 @@ export default function LeadsPage() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+
+          {groupLeads.length === 0 && (
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardContent className="flex min-h-[200px] flex-col items-center justify-center">
+                <Search className="h-12 w-12 text-neutral-300 dark:text-neutral-600" />
+                <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  Lead bulunamadı
+                </h3>
+                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                  {searchQuery ? `"${searchQuery}" için sonuç bulunamadı` : 'Bu grupta lead yok'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ))}
 
       {/* Add Lead Modal */}
       <AddLeadModal
