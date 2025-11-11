@@ -76,6 +76,13 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
         created_by: 'demo',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        relatedTasks: [],
+        relatedNotes: [],
+        relatedEvents: [],
+        priority: 'medium',
+        birthday: null,
+        department: null,
+        is_key_contact: false,
       };
 
       onContactAdded(newContact);

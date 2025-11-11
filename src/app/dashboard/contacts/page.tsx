@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { AddContactModal } from '@/components/contacts/AddContactModal';
 import { EditContactModal } from '@/components/contacts/EditContactModal';
+import { ContactDetailModal } from '@/components/contacts/ContactDetailModal';
 
 // Demo contacts data
 const DEMO_CONTACTS: Contact[] = [
@@ -45,18 +46,25 @@ const DEMO_CONTACTS: Contact[] = [
     status: 'client',
     tags: ['VIP', 'Tech'],
     avatar_url: null,
-    linkedin_url: null,
+    linkedin_url: 'https://linkedin.com/in/ahmetyilmaz',
     twitter_url: null,
-    address: null,
-    city: null,
+    address: 'Levent Mah. Teknoloji Cad. No:15',
+    city: 'İstanbul',
     state: null,
-    country: null,
-    notes: null,
-    last_contact_date: null,
+    country: 'Türkiye',
+    notes: 'Uzun süredir çalıştığımız önemli bir müşteri. Her ayın ilk haftasında rutin toplantı yapılıyor.',
+    last_contact_date: new Date().toISOString(),
     organization_id: 'demo',
     created_by: 'demo',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    priority: 'high',
+    birthday: '1985-05-15',
+    department: 'Yönetim',
+    is_key_contact: true,
   },
   {
     id: '2',
@@ -72,15 +80,22 @@ const DEMO_CONTACTS: Contact[] = [
     linkedin_url: null,
     twitter_url: null,
     address: null,
-    city: null,
+    city: 'Ankara',
     state: null,
-    country: null,
-    notes: null,
+    country: 'Türkiye',
+    notes: 'Yeni lead, pazarlama stratejisi konusunda görüşme talep etti.',
     last_contact_date: null,
     organization_id: 'demo',
     created_by: 'demo',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    priority: 'medium',
+    birthday: null,
+    department: 'Pazarlama',
+    is_key_contact: false,
   },
   {
     id: '3',
@@ -93,18 +108,25 @@ const DEMO_CONTACTS: Contact[] = [
     status: 'vip',
     tags: ['VIP', 'Tech', 'Startup'],
     avatar_url: null,
-    linkedin_url: null,
-    twitter_url: null,
+    linkedin_url: 'https://linkedin.com/in/mehmetdemir',
+    twitter_url: 'https://twitter.com/mdemir',
     address: null,
-    city: null,
+    city: 'İzmir',
     state: null,
-    country: null,
-    notes: null,
-    last_contact_date: null,
+    country: 'Türkiye',
+    notes: 'VIP müşteri, teknoloji ortağımız. Aylık inovasyon toplantıları yapılıyor.',
+    last_contact_date: new Date().toISOString(),
     organization_id: 'demo',
     created_by: 'demo',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    priority: 'critical',
+    birthday: '1990-03-22',
+    department: 'Teknoloji',
+    is_key_contact: true,
   },
   {
     id: '4',
@@ -120,15 +142,22 @@ const DEMO_CONTACTS: Contact[] = [
     linkedin_url: null,
     twitter_url: null,
     address: null,
-    city: null,
+    city: 'Bursa',
     state: null,
-    country: null,
+    country: 'Türkiye',
     notes: null,
     last_contact_date: null,
     organization_id: 'demo',
     created_by: 'demo',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    priority: 'low',
+    birthday: null,
+    department: 'Ürün',
+    is_key_contact: false,
   },
   {
     id: '5',
@@ -144,15 +173,22 @@ const DEMO_CONTACTS: Contact[] = [
     linkedin_url: null,
     twitter_url: null,
     address: null,
-    city: null,
+    city: 'Antalya',
     state: null,
-    country: null,
-    notes: null,
-    last_contact_date: null,
+    country: 'Türkiye',
+    notes: 'Aktif müşteri, satış partneri.',
+    last_contact_date: '2024-02-01',
     organization_id: 'demo',
     created_by: 'demo',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    priority: 'high',
+    birthday: '1988-11-10',
+    department: 'Satış',
+    is_key_contact: true,
   },
 ];
 
@@ -163,6 +199,7 @@ export default function ContactsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
 
@@ -170,7 +207,19 @@ export default function ContactsPage() {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setContacts(JSON.parse(stored));
+      const loadedContacts = JSON.parse(stored);
+      // Migrate old data to include new fields
+      const migratedContacts = loadedContacts.map((contact: any) => ({
+        ...contact,
+        relatedTasks: contact.relatedTasks || [],
+        relatedNotes: contact.relatedNotes || [],
+        relatedEvents: contact.relatedEvents || [],
+        priority: contact.priority || 'medium',
+        birthday: contact.birthday || null,
+        department: contact.department || null,
+        is_key_contact: contact.is_key_contact || false,
+      }));
+      setContacts(migratedContacts);
     } else {
       setContacts(DEMO_CONTACTS);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_CONTACTS));
@@ -196,7 +245,18 @@ export default function ContactsPage() {
   });
 
   const handleContactAdded = (newContact: Contact) => {
-    setContacts([newContact, ...contacts]);
+    // Add default values for new fields if missing
+    const contactWithDefaults: Contact = {
+      ...newContact,
+      relatedTasks: newContact.relatedTasks || [],
+      relatedNotes: newContact.relatedNotes || [],
+      relatedEvents: newContact.relatedEvents || [],
+      priority: newContact.priority || 'medium',
+      birthday: newContact.birthday || null,
+      department: newContact.department || null,
+      is_key_contact: newContact.is_key_contact || false,
+    };
+    setContacts([contactWithDefaults, ...contacts]);
   };
 
   const handleContactUpdated = (updatedContact: Contact) => {
@@ -209,8 +269,14 @@ export default function ContactsPage() {
     }
   };
 
+  const handleViewContact = (contact: Contact) => {
+    setSelectedContact(contact);
+    setIsDetailModalOpen(true);
+  };
+
   const handleEditContact = (contact: Contact) => {
     setSelectedContact(contact);
+    setIsDetailModalOpen(false);
     setIsEditModalOpen(true);
   };
 
@@ -352,7 +418,8 @@ export default function ContactsPage() {
               {filteredContacts.map((contact) => (
                 <div
                   key={contact.id}
-                  className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+                  onClick={() => handleViewContact(contact)}
+                  className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4 transition-all hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700 cursor-pointer hover:shadow-md hover:scale-[1.01]"
                 >
                   <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12">
@@ -409,7 +476,11 @@ export default function ContactsPage() {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -443,6 +514,17 @@ export default function ContactsPage() {
         onContactAdded={handleContactAdded}
         organizationId="demo"
       />
+
+      {/* Detail Contact Modal */}
+      {selectedContact && (
+        <ContactDetailModal
+          open={isDetailModalOpen}
+          onOpenChange={setIsDetailModalOpen}
+          contact={selectedContact}
+          onEdit={handleEditContact}
+          onDelete={handleDeleteContact}
+        />
+      )}
 
       {/* Edit Contact Modal */}
       {selectedContact && (

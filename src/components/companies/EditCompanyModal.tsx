@@ -39,6 +39,17 @@ const companySchema = z.object({
 
 type CompanyFormData = z.infer<typeof companySchema>;
 
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  status: 'planned' | 'in_progress' | 'completed' | 'on_hold';
+  start_date: string;
+  end_date?: string;
+  budget?: string;
+  progress: number;
+}
+
 interface Company {
   id: string;
   name: string;
@@ -56,6 +67,15 @@ interface Company {
   tags: string[];
   created_at: string;
   updated_at: string;
+  projects: Project[];
+  agreement_date?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  relatedTasks: string[];
+  relatedNotes: string[];
+  relatedEvents: string[];
+  last_activity_date?: string;
+  total_revenue?: string;
+  description?: string;
 }
 
 interface EditCompanyModalProps {

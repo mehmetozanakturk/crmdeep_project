@@ -23,6 +23,14 @@ export interface Contact {
   created_by: string;
   created_at: string;
   updated_at: string;
+  // New fields for enhanced functionality
+  relatedTasks: string[];
+  relatedNotes: string[];
+  relatedEvents: string[];
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  birthday?: string | null;
+  department?: string | null;
+  is_key_contact?: boolean;
 }
 
 export interface CreateContactInput {

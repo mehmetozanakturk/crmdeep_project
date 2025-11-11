@@ -30,6 +30,18 @@ import {
 } from 'lucide-react';
 import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
 import { EditCompanyModal } from '@/components/companies/EditCompanyModal';
+import { CompanyDetailModal } from '@/components/companies/CompanyDetailModal';
+
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  status: 'planned' | 'in_progress' | 'completed' | 'on_hold';
+  start_date: string;
+  end_date?: string;
+  budget?: string;
+  progress: number; // 0-100
+}
 
 interface Company {
   id: string;
@@ -48,6 +60,16 @@ interface Company {
   tags: string[];
   created_at: string;
   updated_at: string;
+  // New fields for enhanced functionality
+  projects: Project[];
+  agreement_date?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  relatedTasks: string[];
+  relatedNotes: string[];
+  relatedEvents: string[];
+  last_activity_date?: string;
+  total_revenue?: string;
+  description?: string;
 }
 
 const DEMO_COMPANIES: Company[] = [
@@ -68,6 +90,35 @@ const DEMO_COMPANIES: Company[] = [
     tags: ['Kurumsal', 'Öncelikli'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    projects: [
+      {
+        id: 'p1',
+        title: 'CRM Sistemi Geliştirme',
+        description: 'Özel CRM yazılımı geliştirme projesi',
+        status: 'in_progress',
+        start_date: '2024-01-15',
+        end_date: '2024-06-30',
+        budget: '₺500,000',
+        progress: 65,
+      },
+      {
+        id: 'p2',
+        title: 'Mobil Uygulama',
+        description: 'iOS ve Android mobil uygulama',
+        status: 'planned',
+        start_date: '2024-03-01',
+        budget: '₺250,000',
+        progress: 0,
+      },
+    ],
+    agreement_date: '2023-12-10',
+    priority: 'high',
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    last_activity_date: new Date().toISOString(),
+    total_revenue: '₺750,000',
+    description: 'Kurumsal yazılım çözümleri konusunda uzmanlaşmış teknoloji şirketi',
   },
   {
     id: '2',
@@ -86,6 +137,26 @@ const DEMO_COMPANIES: Company[] = [
     tags: ['Müşteri'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    projects: [
+      {
+        id: 'p3',
+        title: 'Sosyal Medya Kampanyası',
+        description: '6 aylık sosyal medya yönetimi',
+        status: 'in_progress',
+        start_date: '2024-02-01',
+        end_date: '2024-07-31',
+        budget: '₺150,000',
+        progress: 40,
+      },
+    ],
+    agreement_date: '2024-01-15',
+    priority: 'medium',
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    last_activity_date: new Date().toISOString(),
+    total_revenue: '₺150,000',
+    description: 'Dijital pazarlama ve sosyal medya yönetimi',
   },
   {
     id: '3',
@@ -104,6 +175,35 @@ const DEMO_COMPANIES: Company[] = [
     tags: ['Kurumsal', 'VIP'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    projects: [
+      {
+        id: 'p4',
+        title: 'E-ticaret Platform Yenileme',
+        description: 'Mevcut platformun baştan geliştirilmesi',
+        status: 'completed',
+        start_date: '2023-09-01',
+        end_date: '2024-01-31',
+        budget: '₺1,200,000',
+        progress: 100,
+      },
+      {
+        id: 'p5',
+        title: 'Mobil Uygulama v2.0',
+        description: 'Mobil uygulamanın ikinci versiyonu',
+        status: 'in_progress',
+        start_date: '2024-02-15',
+        budget: '₺600,000',
+        progress: 55,
+      },
+    ],
+    agreement_date: '2023-08-20',
+    priority: 'critical',
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    last_activity_date: new Date().toISOString(),
+    total_revenue: '₺1,800,000',
+    description: 'Lider e-ticaret platformu ve çözümleri',
   },
   {
     id: '4',
@@ -122,6 +222,15 @@ const DEMO_COMPANIES: Company[] = [
     tags: ['Potansiyel'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    projects: [],
+    agreement_date: undefined,
+    priority: 'low',
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    last_activity_date: undefined,
+    total_revenue: undefined,
+    description: 'Yeni nesil fintech startup',
   },
   {
     id: '5',
@@ -140,6 +249,25 @@ const DEMO_COMPANIES: Company[] = [
     tags: ['Müşteri', 'Kreatif'],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    projects: [
+      {
+        id: 'p6',
+        title: 'Marka Kimliği Tasarımı',
+        description: 'Kurumsal kimlik ve marka rehberi',
+        status: 'on_hold',
+        start_date: '2024-01-10',
+        budget: '₺80,000',
+        progress: 25,
+      },
+    ],
+    agreement_date: '2023-11-05',
+    priority: 'medium',
+    relatedTasks: [],
+    relatedNotes: [],
+    relatedEvents: [],
+    last_activity_date: '2024-01-25',
+    total_revenue: '₺80,000',
+    description: 'Kreatif tasarım ve branding ajansı',
   },
 ];
 
@@ -150,6 +278,7 @@ export default function CompaniesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
 
@@ -157,7 +286,21 @@ export default function CompaniesPage() {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setCompanies(JSON.parse(stored));
+      const loadedCompanies = JSON.parse(stored);
+      // Migrate old data to include new fields
+      const migratedCompanies = loadedCompanies.map((company: any) => ({
+        ...company,
+        projects: company.projects || [],
+        agreement_date: company.agreement_date || undefined,
+        priority: company.priority || 'medium',
+        relatedTasks: company.relatedTasks || [],
+        relatedNotes: company.relatedNotes || [],
+        relatedEvents: company.relatedEvents || [],
+        last_activity_date: company.last_activity_date || company.updated_at,
+        total_revenue: company.total_revenue || undefined,
+        description: company.description || undefined,
+      }));
+      setCompanies(migratedCompanies);
     } else {
       setCompanies(DEMO_COMPANIES);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_COMPANIES));
@@ -183,7 +326,17 @@ export default function CompaniesPage() {
   });
 
   const handleCompanyAdded = (newCompany: Company) => {
-    setCompanies([newCompany, ...companies]);
+    // Add default values for new fields if missing
+    const companyWithDefaults: Company = {
+      ...newCompany,
+      projects: newCompany.projects || [],
+      priority: newCompany.priority || 'medium',
+      relatedTasks: newCompany.relatedTasks || [],
+      relatedNotes: newCompany.relatedNotes || [],
+      relatedEvents: newCompany.relatedEvents || [],
+      last_activity_date: newCompany.last_activity_date || newCompany.created_at,
+    };
+    setCompanies([companyWithDefaults, ...companies]);
   };
 
   const handleCompanyUpdated = (updatedCompany: Company) => {
@@ -196,8 +349,14 @@ export default function CompaniesPage() {
     }
   };
 
+  const handleViewCompany = (company: Company) => {
+    setSelectedCompany(company);
+    setIsDetailModalOpen(true);
+  };
+
   const handleEditCompany = (company: Company) => {
     setSelectedCompany(company);
+    setIsDetailModalOpen(false);
     setIsEditModalOpen(true);
   };
 
@@ -322,7 +481,11 @@ export default function CompaniesPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredCompanies.map((company) => (
-            <Card key={company.id} className="overflow-hidden transition-shadow hover:shadow-lg border-neutral-200 dark:border-neutral-700">
+            <Card
+              key={company.id}
+              className="overflow-hidden transition-all hover:shadow-lg border-neutral-200 dark:border-neutral-700 cursor-pointer hover:scale-[1.02]"
+              onClick={() => handleViewCompany(company)}
+            >
               <CardHeader className="bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800 dark:to-neutral-800/50 pb-4">
                 <div className="flex items-start justify-between">
                   <Avatar className="h-16 w-16 rounded-lg">
@@ -332,7 +495,11 @@ export default function CompaniesPage() {
                   </Avatar>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -416,6 +583,17 @@ export default function CompaniesPage() {
         onOpenChange={setIsAddModalOpen}
         onCompanyAdded={handleCompanyAdded}
       />
+
+      {/* Detail Company Modal */}
+      {selectedCompany && (
+        <CompanyDetailModal
+          open={isDetailModalOpen}
+          onOpenChange={setIsDetailModalOpen}
+          company={selectedCompany}
+          onEdit={handleEditCompany}
+          onDelete={handleDeleteCompany}
+        />
+      )}
 
       {/* Edit Company Modal */}
       {selectedCompany && (
