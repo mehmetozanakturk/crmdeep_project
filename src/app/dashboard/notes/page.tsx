@@ -71,6 +71,7 @@ const getCategoryInfo = (category: Note['category']) => {
     case 'meeting':
       return { label: 'Toplantı', color: 'text-orange-600 dark:text-orange-400' };
     case 'other':
+    default:
       return { label: 'Diğer', color: 'text-neutral-600 dark:text-neutral-400' };
   }
 };
@@ -90,6 +91,7 @@ const CategoryIcon = ({ category, className }: { category: Note['category']; cla
     case 'meeting':
       return <Users {...iconProps} />;
     case 'other':
+    default:
       return <MoreHorizontal {...iconProps} />;
   }
 };
@@ -161,7 +163,15 @@ export default function NotesPage() {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setNotes(JSON.parse(stored));
+      const loadedNotes = JSON.parse(stored);
+      // Migrate notes without category field
+      const migratedNotes = loadedNotes.map((note: any) => ({
+        ...note,
+        category: note.category || 'other',
+        created_at: note.created_at || note.createdAt || new Date().toISOString(),
+        updated_at: note.updated_at || note.createdAt || new Date().toISOString(),
+      }));
+      setNotes(migratedNotes);
     } else {
       setNotes(DEMO_NOTES);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_NOTES));
