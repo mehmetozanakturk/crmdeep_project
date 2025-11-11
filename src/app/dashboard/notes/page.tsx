@@ -61,17 +61,36 @@ const STORAGE_KEY = 'crmdeep_notes';
 const getCategoryInfo = (category: Note['category']) => {
   switch (category) {
     case 'work':
-      return { label: 'İş', icon: Briefcase, color: 'text-blue-600 dark:text-blue-400' };
+      return { label: 'İş', color: 'text-blue-600 dark:text-blue-400' };
     case 'personal':
-      return { label: 'Kişisel', icon: User, color: 'text-green-600 dark:text-green-400' };
+      return { label: 'Kişisel', color: 'text-green-600 dark:text-green-400' };
     case 'project':
-      return { label: 'Proje', icon: FolderKanban, color: 'text-purple-600 dark:text-purple-400' };
+      return { label: 'Proje', color: 'text-purple-600 dark:text-purple-400' };
     case 'idea':
-      return { label: 'Fikir', icon: Lightbulb, color: 'text-yellow-600 dark:text-yellow-400' };
+      return { label: 'Fikir', color: 'text-yellow-600 dark:text-yellow-400' };
     case 'meeting':
-      return { label: 'Toplantı', icon: Users, color: 'text-orange-600 dark:text-orange-400' };
+      return { label: 'Toplantı', color: 'text-orange-600 dark:text-orange-400' };
     case 'other':
-      return { label: 'Diğer', icon: MoreHorizontal, color: 'text-neutral-600 dark:text-neutral-400' };
+      return { label: 'Diğer', color: 'text-neutral-600 dark:text-neutral-400' };
+  }
+};
+
+const CategoryIcon = ({ category, className }: { category: Note['category']; className?: string }) => {
+  const iconProps = { className };
+
+  switch (category) {
+    case 'work':
+      return <Briefcase {...iconProps} />;
+    case 'personal':
+      return <User {...iconProps} />;
+    case 'project':
+      return <FolderKanban {...iconProps} />;
+    case 'idea':
+      return <Lightbulb {...iconProps} />;
+    case 'meeting':
+      return <Users {...iconProps} />;
+    case 'other':
+      return <MoreHorizontal {...iconProps} />;
   }
 };
 
@@ -396,9 +415,10 @@ export default function NotesPage() {
                   <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{note.content}</p>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="text-xs">
-                      {React.createElement(getCategoryInfo(note.category).icon, {
-                        className: `h-3 w-3 ${getCategoryInfo(note.category).color}`,
-                      })}
+                      <CategoryIcon
+                        category={note.category}
+                        className={`h-3 w-3 ${getCategoryInfo(note.category).color}`}
+                      />
                       <span className="ml-1">{getCategoryInfo(note.category).label}</span>
                     </Badge>
                     {note.tags.map((tag, idx) => (
@@ -480,9 +500,10 @@ export default function NotesPage() {
                   <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{note.content}</p>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="text-xs">
-                      {React.createElement(getCategoryInfo(note.category).icon, {
-                        className: `h-3 w-3 ${getCategoryInfo(note.category).color}`,
-                      })}
+                      <CategoryIcon
+                        category={note.category}
+                        className={`h-3 w-3 ${getCategoryInfo(note.category).color}`}
+                      />
                       <span className="ml-1">{getCategoryInfo(note.category).label}</span>
                     </Badge>
                     {note.tags.map((tag, idx) => (
