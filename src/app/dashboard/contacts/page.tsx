@@ -93,10 +93,28 @@ export default function ContactsPage() {
   if (!organizationId) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100">Organization bulunamadı</p>
-          <p className="mt-2 text-neutral-600 dark:text-neutral-400">Lütfen sayfayı yenileyin veya destek ile iletişime geçin.</p>
-        </div>
+        <Card className="max-w-md border-neutral-200 dark:border-neutral-700">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Users className="mx-auto h-12 w-12 text-warning-500 dark:text-warning-400" />
+              <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                Organization Yükleniyor...
+              </h3>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                İlk defa giriş yaptınız. Organization otomatik oluşturuluyor.
+              </p>
+              <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                Eğer bu mesaj devam ederse, tarayıcı console&apos;unu açın (F12) ve hataları kontrol edin.
+              </p>
+              <Button
+                className="mt-6"
+                onClick={() => window.location.reload()}
+              >
+                Sayfayı Yenile
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
