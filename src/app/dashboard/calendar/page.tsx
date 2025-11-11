@@ -1,9 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Plus,
   Calendar as CalendarIcon,
@@ -13,105 +21,124 @@ import {
   Users,
   Video,
   MapPin,
+  MoreVertical,
+  Edit,
+  Trash2,
 } from 'lucide-react';
+import { AddEventModal, type CalendarEvent } from '@/components/calendar/AddEventModal';
+import { EditEventModal } from '@/components/calendar/EditEventModal';
+import { type Task } from '../tasks/page';
 
-interface CalendarEvent {
-  id: string;
-  title: string;
-  date: Date;
-  startTime: string;
-  endTime: string;
-  type: 'meeting' | 'deadline' | 'task' | 'call';
-  attendees?: string[];
-  location?: string;
-  color: string;
-}
+const EVENTS_STORAGE_KEY = 'crmdeep_calendar_events';
+const TASKS_STORAGE_KEY = 'crmdeep_tasks';
 
-const DEMO_EVENTS: CalendarEvent[] = [
-  {
-    id: '1',
-    title: 'TechCorp Stratejik Toplantı',
-    date: new Date(2024, 1, 15),
-    startTime: '10:00',
-    endTime: '11:30',
-    type: 'meeting',
-    attendees: ['Ahmet Y.', 'Zeynep K.', 'Mehmet S.'],
-    location: 'Zoom',
-    color: 'bg-primary-500',
-  },
-  {
-    id: '2',
-    title: 'Web Sitesi Tasarım Son Teslim',
-    date: new Date(2024, 1, 18),
-    startTime: '23:59',
-    endTime: '23:59',
-    type: 'deadline',
-    color: 'bg-danger-500',
-  },
-  {
-    id: '3',
-    title: 'GreenLife Kampanya Görüşmesi',
-    date: new Date(2024, 1, 20),
-    startTime: '14:00',
-    endTime: '15:00',
-    type: 'call',
-    attendees: ['Ayşe D.'],
-    color: 'bg-success-500',
-  },
-  {
-    id: '4',
-    title: 'API Dokümantasyonu Tamamla',
-    date: new Date(2024, 1, 22),
-    startTime: '17:00',
-    endTime: '18:00',
-    type: 'task',
-    color: 'bg-warning-500',
-  },
-  {
-    id: '5',
-    title: 'Ekip Retrospektifi',
-    date: new Date(2024, 1, 23),
-    startTime: '15:00',
-    endTime: '16:30',
-    type: 'meeting',
-    attendees: ['Tüm Ekip'],
-    location: 'Toplantı Odası 2',
-    color: 'bg-primary-500',
-  },
-  {
-    id: '6',
-    title: 'BlueSky Mobil App Demo',
-    date: new Date(2024, 1, 25),
-    startTime: '11:00',
-    endTime: '12:00',
-    type: 'meeting',
-    attendees: ['Emre B.', 'Selin A.'],
-    location: 'Teams',
-    color: 'bg-primary-500',
-  },
-  {
-    id: '7',
-    title: 'SEO Raporu Hazırla',
-    date: new Date(2024, 1, 26),
-    startTime: '09:00',
-    endTime: '10:00',
-    type: 'task',
-    color: 'bg-warning-500',
-  },
-  {
-    id: '8',
-    title: 'Müşteri Portal Launch',
-    date: new Date(2024, 1, 28),
-    startTime: '00:00',
-    endTime: '23:59',
-    type: 'deadline',
-    color: 'bg-danger-500',
-  },
-];
+const getDefaultEvents = (): CalendarEvent[] => {
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+
+  return [
+    {
+      id: '1',
+      title: 'TechCorp Stratejik Toplantı',
+      description: 'Yıllık stratejik planlama toplantısı',
+      date: new Date(thisYear, thisMonth, 15),
+      startTime: '10:00',
+      endTime: '11:30',
+      type: 'meeting',
+      attendees: ['Ahmet Y.', 'Zeynep K.', 'Mehmet S.'],
+      location: 'Zoom',
+      color: 'bg-primary-500',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    },
+    {
+      id: '2',
+      title: 'Web Sitesi Tasarım Son Teslim',
+      description: 'Web sitesi tasarımının final teslimi',
+      date: new Date(thisYear, thisMonth, 18),
+      startTime: '23:59',
+      endTime: '23:59',
+      type: 'deadline',
+      color: 'bg-danger-500',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    },
+    {
+      id: '3',
+      title: 'GreenLife Kampanya Görüşmesi',
+      description: 'Yeni kampanya stratejisi',
+      date: new Date(thisYear, thisMonth, 20),
+      startTime: '14:00',
+      endTime: '15:00',
+      type: 'call',
+      attendees: ['Ayşe D.'],
+      color: 'bg-success-500',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    },
+    {
+      id: '4',
+      title: 'Ekip Retrospektifi',
+      description: 'Sprint retrospektif toplantısı',
+      date: new Date(thisYear, thisMonth, 23),
+      startTime: '15:00',
+      endTime: '16:30',
+      type: 'meeting',
+      attendees: ['Tüm Ekip'],
+      location: 'Toplantı Odası 2',
+      color: 'bg-primary-500',
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    },
+  ];
+};
+
+const DEMO_EVENTS = getDefaultEvents();
 
 export default function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date(2024, 1, 1)); // February 2024
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [calendarTasks, setCalendarTasks] = useState<Task[]>([]);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const today = new Date();
+
+  // Load events from localStorage
+  useEffect(() => {
+    const storedEvents = localStorage.getItem(EVENTS_STORAGE_KEY);
+    if (storedEvents) {
+      const parsed = JSON.parse(storedEvents);
+      // Convert date strings back to Date objects
+      const eventsWithDates = parsed.map((e: any) => ({
+        ...e,
+        date: new Date(e.date),
+      }));
+      setEvents(eventsWithDates);
+    } else {
+      setEvents(DEMO_EVENTS);
+      localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(DEMO_EVENTS));
+    }
+  }, []);
+
+  // Load tasks that are marked for calendar
+  useEffect(() => {
+    const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+    if (storedTasks) {
+      const parsed: Task[] = JSON.parse(storedTasks);
+      const tasksForCalendar = parsed.filter((t) => t.inCalendar);
+      setCalendarTasks(tasksForCalendar);
+    }
+  }, []);
+
+  // Save events to localStorage whenever they change
+  useEffect(() => {
+    if (events.length > 0) {
+      localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
+    }
+  }, [events]);
 
   const monthNames = [
     'Ocak',
@@ -130,6 +157,42 @@ export default function CalendarPage() {
 
   const daysOfWeek = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
+  const handleEventAdded = (newEvent: CalendarEvent) => {
+    setEvents([newEvent, ...events]);
+  };
+
+  const handleEventUpdated = (updatedEvent: CalendarEvent) => {
+    setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    if (confirm('Bu etkinliği silmek istediğinizden emin misiniz?')) {
+      setEvents(events.filter((e) => e.id !== eventId));
+    }
+  };
+
+  const handleEditEvent = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setEditModalOpen(true);
+  };
+
+  const handlePreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+    setAddModalOpen(true);
+  };
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -142,15 +205,59 @@ export default function CalendarPage() {
   };
 
   const getEventsForDate = (date: Date) => {
-    return DEMO_EVENTS.filter(
+    // Get regular events
+    const regularEvents = events.filter(
       (event) =>
         event.date.getDate() === date.getDate() &&
         event.date.getMonth() === date.getMonth() &&
         event.date.getFullYear() === date.getFullYear()
     );
+
+    // Get tasks marked for calendar
+    const taskEvents: CalendarEvent[] = calendarTasks
+      .filter((task) => {
+        const taskDate = new Date(task.dueDate);
+        return (
+          taskDate.getDate() === date.getDate() &&
+          taskDate.getMonth() === date.getMonth() &&
+          taskDate.getFullYear() === date.getFullYear()
+        );
+      })
+      .map((task) => ({
+        id: `task-${task.id}`,
+        title: task.title,
+        description: task.description,
+        date: new Date(task.dueDate),
+        startTime: '09:00',
+        endTime: '17:00',
+        type: 'task' as const,
+        color: 'bg-warning-500',
+        created_at: task.created_at,
+        updated_at: task.updated_at,
+      }));
+
+    return [...regularEvents, ...taskEvents];
   };
 
-  const upcomingEvents = DEMO_EVENTS.filter((event) => event.date >= today)
+  // Combine events and tasks for upcoming events list
+  const allEventsAndTasks = [
+    ...events,
+    ...calendarTasks.map((task) => ({
+      id: `task-${task.id}`,
+      title: task.title,
+      description: task.description,
+      date: new Date(task.dueDate),
+      startTime: '09:00',
+      endTime: '17:00',
+      type: 'task' as const,
+      color: 'bg-warning-500',
+      created_at: task.created_at,
+      updated_at: task.updated_at,
+    })),
+  ];
+
+  const upcomingEvents = allEventsAndTasks
+    .filter((event) => event.date >= today)
     .sort((a, b) => a.date.getTime() - b.date.getTime())
     .slice(0, 5);
 
@@ -203,7 +310,7 @@ export default function CalendarPage() {
             Tüm etkinliklerinizi tek yerden görüntüleyin
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setAddModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Yeni Etkinlik
         </Button>
@@ -217,7 +324,10 @@ export default function CalendarPage() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Bu Ay</p>
                 <p className="mt-1 text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-                  {DEMO_EVENTS.length}
+                  {allEventsAndTasks.filter(e =>
+                    e.date.getMonth() === currentDate.getMonth() &&
+                    e.date.getFullYear() === currentDate.getFullYear()
+                  ).length}
                 </p>
               </div>
               <div className="rounded-lg bg-primary-100 dark:bg-primary-900/30 p-3">
@@ -233,7 +343,7 @@ export default function CalendarPage() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Toplantılar</p>
                 <p className="mt-1 text-3xl font-bold text-primary-600 dark:text-primary-400">
-                  {DEMO_EVENTS.filter((e) => e.type === 'meeting').length}
+                  {allEventsAndTasks.filter((e) => e.type === 'meeting').length}
                 </p>
               </div>
               <div className="rounded-lg bg-primary-100 dark:bg-primary-900/30 p-3">
@@ -249,7 +359,7 @@ export default function CalendarPage() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Son Tarihler</p>
                 <p className="mt-1 text-3xl font-bold text-danger-600 dark:text-danger-400">
-                  {DEMO_EVENTS.filter((e) => e.type === 'deadline').length}
+                  {allEventsAndTasks.filter((e) => e.type === 'deadline').length}
                 </p>
               </div>
               <div className="rounded-lg bg-danger-100 dark:bg-danger-900/30 p-3">
@@ -265,7 +375,7 @@ export default function CalendarPage() {
               <div>
                 <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Görevler</p>
                 <p className="mt-1 text-3xl font-bold text-warning-600 dark:text-warning-400">
-                  {DEMO_EVENTS.filter((e) => e.type === 'task').length}
+                  {allEventsAndTasks.filter((e) => e.type === 'task').length}
                 </p>
               </div>
               <div className="rounded-lg bg-warning-100 dark:bg-warning-900/30 p-3">
@@ -285,13 +395,13 @@ export default function CalendarPage() {
                 {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" className="h-8 w-8">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={handlePreviousMonth}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={handleToday}>
                   Bugün
                 </Button>
-                <Button variant="outline" size="icon" className="h-8 w-8">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNextMonth}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -331,6 +441,7 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={day}
+                    onClick={() => handleDateClick(date)}
                     className={`aspect-square border rounded-lg p-1 transition-all hover:border-primary-500 dark:hover:border-primary-600 cursor-pointer ${
                       isToday
                         ? 'border-primary-500 dark:border-primary-600 bg-primary-50 dark:bg-primary-900/20'
@@ -397,13 +508,39 @@ export default function CalendarPage() {
                         </span>
                       </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="shrink-0 text-xs flex items-center gap-1"
-                    >
-                      {getEventIcon(event.type)}
-                      {getEventTypeName(event.type)}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 text-xs flex items-center gap-1"
+                      >
+                        {getEventIcon(event.type)}
+                        {getEventTypeName(event.type)}
+                      </Badge>
+                      {!event.id.startsWith('task-') && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                              <Edit className="mr-2 h-3 w-3" />
+                              Düzenle
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteEvent(event.id)}
+                              className="text-danger-600 dark:text-danger-400"
+                            >
+                              <Trash2 className="mr-2 h-3 w-3" />
+                              Sil
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-400">
@@ -413,14 +550,14 @@ export default function CalendarPage() {
                     </span>
                   </div>
 
-                  {event.location && (
+                  {'location' in event && event.location && (
                     <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-400">
                       <MapPin className="h-3 w-3" />
                       <span>{event.location}</span>
                     </div>
                   )}
 
-                  {event.attendees && event.attendees.length > 0 && (
+                  {'attendees' in event && event.attendees && event.attendees.length > 0 && (
                     <div className="flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-400">
                       <Users className="h-3 w-3" />
                       <span>{event.attendees.join(', ')}</span>
@@ -432,6 +569,24 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Event Modal */}
+      <AddEventModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        onEventAdded={handleEventAdded}
+        preselectedDate={selectedDate}
+      />
+
+      {/* Edit Event Modal */}
+      {selectedEvent && (
+        <EditEventModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          event={selectedEvent}
+          onEventUpdated={handleEventUpdated}
+        />
+      )}
     </div>
   );
 }
