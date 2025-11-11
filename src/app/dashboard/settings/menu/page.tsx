@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   CRM_MODULES,
   MODULE_CATEGORIES,
@@ -12,32 +13,99 @@ import {
   getDefaultPinnedModules,
   type ModuleCategory,
 } from '@/lib/modules';
-import { Settings, Pin, PinOff, RotateCcw } from 'lucide-react';
+import { Settings, Pin, PinOff, RotateCcw, Loader2, Check } from 'lucide-react';
+import {
+  loadMenuPreferences,
+  saveMenuPreference,
+  resetMenuToDefaults,
+} from '@/lib/api/menu-preferences';
 
 export default function MenuCustomizationPage() {
-  // TODO: Load from Supabase user_menu_preferences
-  const [pinnedModules, setPinnedModules] = useState<Set<string>>(
-    new Set(getDefaultPinnedModules().map((m) => m.key))
-  );
+  const [pinnedModules, setPinnedModules] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
-  const togglePin = (moduleKey: string) => {
+  // TODO: Get actual organization ID
+  const organizationId = 'temp-org-id';
+
+  // Load preferences on mount
+  useEffect(() => {
+    async function loadPrefs() {
+      try {
+        const preferences = await loadMenuPreferences(organizationId);
+        const pinned = new Set(preferences.map((p) => p.module_key));
+
+        if (pinned.size === 0) {
+          // No preferences, use defaults
+          const defaults = getDefaultPinnedModules().map((m) => m.key);
+          setPinnedModules(new Set(defaults));
+        } else {
+          setPinnedModules(pinned);
+        }
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPrefs();
+  }, [organizationId]);
+
+  const togglePin = async (moduleKey: string) => {
+    const wasPinned = pinnedModules.has(moduleKey);
     const newPinned = new Set(pinnedModules);
-    if (newPinned.has(moduleKey)) {
+
+    if (wasPinned) {
       newPinned.delete(moduleKey);
     } else {
       newPinned.add(moduleKey);
     }
+
     setPinnedModules(newPinned);
-    // TODO: Save to Supabase
+    setIsSaving(true);
+
+    // Save to Supabase
+    const success = await saveMenuPreference(organizationId, moduleKey, !wasPinned);
+
+    if (success) {
+      setSaveMessage('✓ Kaydedildi');
+      setTimeout(() => setSaveMessage(null), 2000);
+    } else {
+      setSaveMessage('Hata! Tekrar deneyin.');
+      // Revert on error
+      setPinnedModules(new Set(wasPinned ? [...newPinned, moduleKey] : [...newPinned].filter(k => k !== moduleKey)));
+    }
+
+    setIsSaving(false);
   };
 
-  const resetToDefault = () => {
-    const defaults = getDefaultPinnedModules().map((m) => m.key);
-    setPinnedModules(new Set(defaults));
-    // TODO: Save to Supabase
+  const resetToDefault = async () => {
+    setIsSaving(true);
+    const success = await resetMenuToDefaults(organizationId);
+
+    if (success) {
+      const defaults = getDefaultPinnedModules().map((m) => m.key);
+      setPinnedModules(new Set(defaults));
+      setSaveMessage('✓ Varsayılana döndürüldü');
+      setTimeout(() => setSaveMessage(null), 2000);
+    } else {
+      setSaveMessage('Hata! Tekrar deneyin.');
+    }
+
+    setIsSaving(false);
   };
 
   const pinnedCount = pinnedModules.size;
+
+  if (isLoading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -49,10 +117,21 @@ export default function MenuCustomizationPage() {
             Sol menünüzde görmek istediğiniz modülleri seçin ve sabitleyin
           </p>
         </div>
-        <Button variant="outline" onClick={resetToDefault}>
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Varsayılana Dön
-        </Button>
+        <div className="flex items-center gap-3">
+          {saveMessage && (
+            <Badge variant={saveMessage.includes('✓') ? 'default' : 'destructive'}>
+              {saveMessage}
+            </Badge>
+          )}
+          <Button variant="outline" onClick={resetToDefault} disabled={isSaving}>
+            {isSaving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCcw className="mr-2 h-4 w-4" />
+            )}
+            Varsayılana Dön
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

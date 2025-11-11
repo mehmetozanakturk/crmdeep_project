@@ -4,20 +4,46 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { CRM_MODULES, getDefaultPinnedModules, type CRMModule } from '@/lib/modules';
+import { CRM_MODULES, getDefaultPinnedModules, type CRMModule, getModuleByKey } from '@/lib/modules';
 import { Settings, Menu } from 'lucide-react';
-
-// Navigation items will be loaded from user preferences
-// For now, using default pinned modules
+import { loadMenuPreferences, initializeDefaultMenu } from '@/lib/api/menu-preferences';
 
 export function Sidebar() {
   const pathname = usePathname();
   const [pinnedModules, setPinnedModules] = useState<CRMModule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Load from Supabase user_menu_preferences
-    // For now, use default pinned modules
-    setPinnedModules(getDefaultPinnedModules());
+    async function loadMenu() {
+      try {
+        // TODO: Get actual organization ID from context/props
+        const organizationId = 'temp-org-id'; // Temporary mock
+
+        // Load preferences from Supabase
+        const preferences = await loadMenuPreferences(organizationId);
+
+        if (preferences.length === 0) {
+          // No preferences found, initialize defaults
+          await initializeDefaultMenu(organizationId);
+          // Use default modules
+          setPinnedModules(getDefaultPinnedModules());
+        } else {
+          // Map preferences to modules
+          const modules = preferences
+            .map((pref) => getModuleByKey(pref.module_key))
+            .filter((m): m is CRMModule => m !== undefined);
+          setPinnedModules(modules);
+        }
+      } catch (error) {
+        console.error('Error loading menu:', error);
+        // Fallback to defaults
+        setPinnedModules(getDefaultPinnedModules());
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadMenu();
   }, []);
 
   return (
