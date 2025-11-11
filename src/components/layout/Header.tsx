@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, Sun, Moon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
+import { useTheme } from '@/components/theme-provider';
 
 export function Header() {
+  const { theme, setTheme } = useTheme();
+
   // TODO: Replace with real user data from Supabase
   const user = {
     name: 'Demo User',
@@ -27,8 +30,12 @@ export function Header() {
     window.location.href = '/login';
   };
 
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white">
+    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
       <div className="flex h-16 items-center justify-between px-6">
         {/* Left: Logo and Search */}
         <div className="flex items-center gap-6">
@@ -47,10 +54,20 @@ export function Header() {
           </div>
         </div>
 
-        {/* Right: Notifications and User Menu */}
+        {/* Right: Theme Toggle, Notifications and User Menu */}
         <div className="flex items-center gap-4">
+          {/* Theme Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="dark:hover:bg-neutral-800"
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
+          <Button variant="ghost" size="icon" className="relative dark:hover:bg-neutral-800">
             <Bell className="h-5 w-5" />
             <Badge
               variant="destructive"
