@@ -1,12 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Search, Mail, Phone, Building2, TrendingUp, Users, Target } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Plus, Search, Mail, Phone, Building2, TrendingUp, Users, Target, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { AddLeadModal } from '@/components/leads/AddLeadModal';
+import { EditLeadModal } from '@/components/leads/EditLeadModal';
+import { LeadDetailModal } from '@/components/leads/LeadDetailModal';
 
 interface Lead {
   id: string;
@@ -78,9 +88,33 @@ const DEMO_LEADS: Lead[] = [
   },
 ];
 
+const STORAGE_KEY = 'crmdeep_leads';
+
 export default function LeadsPage() {
-  const [leads, setLeads] = useState<Lead[]>(DEMO_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  // Load leads from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setLeads(JSON.parse(stored));
+    } else {
+      setLeads(DEMO_LEADS);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_LEADS));
+    }
+  }, []);
+
+  // Save to localStorage whenever leads change
+  useEffect(() => {
+    if (leads.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+    }
+  }, [leads]);
 
   const filteredLeads = leads.filter(
     (lead) =>
@@ -107,6 +141,30 @@ export default function LeadsPage() {
     return 'text-danger-600 dark:text-danger-400';
   };
 
+  const handleLeadAdded = (newLead: Lead) => {
+    setLeads([newLead, ...leads]);
+  };
+
+  const handleLeadUpdated = (updatedLead: Lead) => {
+    setLeads(leads.map(l => l.id === updatedLead.id ? updatedLead : l));
+  };
+
+  const handleDeleteLead = (leadId: string) => {
+    if (confirm('Bu lead\'i silmek istediğinizden emin misiniz?')) {
+      setLeads(leads.filter(l => l.id !== leadId));
+    }
+  };
+
+  const handleEditLead = (lead: Lead) => {
+    setSelectedLead(lead);
+    setIsEditModalOpen(true);
+  };
+
+  const handleViewLead = (lead: Lead) => {
+    setSelectedLead(lead);
+    setDetailModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -114,7 +172,7 @@ export default function LeadsPage() {
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Potansiyel Müşteriler</h1>
           <p className="mt-1 text-neutral-600 dark:text-neutral-400">Lead yönetimi ve takibi</p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Yeni Lead
         </Button>
@@ -187,7 +245,11 @@ export default function LeadsPage() {
 
       <div className="grid gap-4">
         {filteredLeads.map((lead) => (
-          <Card key={lead.id} className="border-neutral-200 dark:border-neutral-700">
+          <Card
+            key={lead.id}
+            className="border-neutral-200 dark:border-neutral-700 cursor-pointer transition-shadow hover:shadow-md"
+            onClick={() => handleViewLead(lead)}
+          >
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
                 <div className="flex gap-4">
@@ -220,21 +282,78 @@ export default function LeadsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="text-right space-y-2">
-                  <div>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400">Lead Skoru</p>
-                    <p className={`text-2xl font-bold ${getScoreColor(lead.score)}`}>{lead.score}</p>
+                <div className="flex gap-3">
+                  <div className="text-right space-y-2">
+                    <div>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400">Lead Skoru</p>
+                      <p className={`text-2xl font-bold ${getScoreColor(lead.score)}`}>{lead.score}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400">Potansiyel Değer</p>
+                      <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{lead.value}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-neutral-600 dark:text-neutral-400">Potansiyel Değer</p>
-                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{lead.value}</p>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditLead(lead);
+                      }}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Düzenle
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteLead(lead.id);
+                        }}
+                        className="text-danger-600 dark:text-danger-400"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Sil
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Add Lead Modal */}
+      <AddLeadModal
+        open={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onLeadAdded={handleLeadAdded}
+      />
+
+      {/* Edit Lead Modal */}
+      {selectedLead && (
+        <EditLeadModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          lead={selectedLead}
+          onLeadUpdated={handleLeadUpdated}
+        />
+      )}
+
+      {/* Lead Detail Modal */}
+      {selectedLead && (
+        <LeadDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          lead={selectedLead}
+          onEdit={handleEditLead}
+          onDelete={handleDeleteLead}
+        />
+      )}
     </div>
   );
 }
