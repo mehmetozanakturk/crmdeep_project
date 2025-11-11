@@ -34,7 +34,6 @@ const projectSchema = z.object({
   brand: z.string().min(2, 'Marka adı gerekli'),
   startDate: z.string().min(1, 'Başlangıç tarihi gerekli'),
   endDate: z.string().min(1, 'Bitiş tarihi gerekli'),
-  progress: z.string().min(0).max(100),
   tasksTotal: z.string().min(1, 'Toplam görev sayısı gerekli'),
   tasksCompleted: z.string().min(0),
   teamMembers: z.string().min(2, 'Ekip üyeleri gerekli'),
@@ -69,7 +68,6 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
       brand: project.brand,
       startDate: project.startDate,
       endDate: project.endDate,
-      progress: project.progress.toString(),
       tasksTotal: project.tasksTotal.toString(),
       tasksCompleted: project.tasksCompleted.toString(),
       teamMembers: project.teamMembers.map(m => m.name).join(', '),
@@ -89,7 +87,6 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
         brand: project.brand,
         startDate: project.startDate,
         endDate: project.endDate,
-        progress: project.progress.toString(),
         tasksTotal: project.tasksTotal.toString(),
         tasksCompleted: project.tasksCompleted.toString(),
         teamMembers: project.teamMembers.map(m => m.name).join(', '),
@@ -114,6 +111,10 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
         };
       });
 
+      const tasksTotal = parseInt(data.tasksTotal);
+      const tasksCompleted = parseInt(data.tasksCompleted);
+      const progress = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
+
       const updatedProject: Project = {
         ...project,
         name: data.name,
@@ -123,9 +124,9 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
         brand: data.brand,
         startDate: data.startDate,
         endDate: data.endDate,
-        progress: parseInt(data.progress),
-        tasksTotal: parseInt(data.tasksTotal),
-        tasksCompleted: parseInt(data.tasksCompleted),
+        progress,
+        tasksTotal,
+        tasksCompleted,
         teamMembers,
         updated_at: new Date().toISOString(),
       };
@@ -190,23 +191,6 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
               />
               {errors.brand && (
                 <p className="mt-1 text-xs text-danger-600">{errors.brand.message}</p>
-              )}
-            </div>
-
-            {/* Progress */}
-            <div>
-              <Label htmlFor="progress">İlerleme (%) *</Label>
-              <Input
-                id="progress"
-                type="number"
-                min="0"
-                max="100"
-                placeholder="50"
-                {...register('progress')}
-                className="mt-1"
-              />
-              {errors.progress && (
-                <p className="mt-1 text-xs text-danger-600">{errors.progress.message}</p>
               )}
             </div>
 

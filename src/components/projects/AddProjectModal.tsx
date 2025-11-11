@@ -34,7 +34,6 @@ const projectSchema = z.object({
   brand: z.string().min(2, 'Marka adı gerekli'),
   startDate: z.string().min(1, 'Başlangıç tarihi gerekli'),
   endDate: z.string().min(1, 'Bitiş tarihi gerekli'),
-  progress: z.string().min(0).max(100),
   tasksTotal: z.string().min(1, 'Toplam görev sayısı gerekli'),
   tasksCompleted: z.string().min(0),
   teamMembers: z.string().min(2, 'Ekip üyeleri gerekli'),
@@ -63,7 +62,6 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded }: AddProje
     defaultValues: {
       status: 'active',
       priority: 'medium',
-      progress: '0',
       tasksCompleted: '0',
     },
   });
@@ -84,6 +82,10 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded }: AddProje
         color: colors[Math.floor(Math.random() * colors.length)],
       }));
 
+      const tasksTotal = parseInt(data.tasksTotal);
+      const tasksCompleted = parseInt(data.tasksCompleted);
+      const progress = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
+
       const newProject: Project = {
         id: Date.now().toString(),
         name: data.name,
@@ -93,9 +95,9 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded }: AddProje
         brand: data.brand,
         startDate: data.startDate,
         endDate: data.endDate,
-        progress: parseInt(data.progress),
-        tasksTotal: parseInt(data.tasksTotal),
-        tasksCompleted: parseInt(data.tasksCompleted),
+        progress,
+        tasksTotal,
+        tasksCompleted,
         teamMembers,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -162,23 +164,6 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded }: AddProje
               />
               {errors.brand && (
                 <p className="mt-1 text-xs text-danger-600">{errors.brand.message}</p>
-              )}
-            </div>
-
-            {/* Progress */}
-            <div>
-              <Label htmlFor="progress">İlerleme (%) *</Label>
-              <Input
-                id="progress"
-                type="number"
-                min="0"
-                max="100"
-                placeholder="50"
-                {...register('progress')}
-                className="mt-1"
-              />
-              {errors.progress && (
-                <p className="mt-1 text-xs text-danger-600">{errors.progress.message}</p>
               )}
             </div>
 
