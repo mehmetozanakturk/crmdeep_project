@@ -54,10 +54,19 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session if exists
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // Refresh session if exists - with error handling
+  let session = null;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (!error && data?.session) {
+      session = data.session;
+    }
+  } catch (error) {
+    // Session read failed - allow request to proceed
+    console.error('Middleware session error:', error);
+    return response;
+  }
 
   // Protected routes - only redirect to login if explicitly no session
   if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {

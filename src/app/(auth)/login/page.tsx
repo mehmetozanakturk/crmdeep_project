@@ -49,10 +49,25 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Success! Wait a moment for session to be fully established
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // Now redirect to dashboard
-        window.location.href = '/dashboard';
+        // Success! Verify session is established before redirect
+        let retries = 0;
+        const maxRetries = 5;
+
+        while (retries < maxRetries) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            // Session confirmed! Now redirect
+            window.location.href = '/dashboard';
+            return;
+          }
+          // Wait and retry
+          await new Promise(resolve => setTimeout(resolve, 300));
+          retries++;
+        }
+
+        // If we get here, session didn't establish properly
+        setError('Session error. Please try again.');
+        setLoading(false);
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
