@@ -524,7 +524,12 @@ export default function CalendarPage() {
                   getEventsForDate(selectedDate).map((event) => (
                 <div
                   key={event.id}
-                  className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 space-y-2"
+                  onClick={() => !event.id.startsWith('task-') && handleEditEvent(event)}
+                  className={`rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 space-y-2 transition-all ${
+                    !event.id.startsWith('task-')
+                      ? 'cursor-pointer hover:border-primary-500 dark:hover:border-primary-600 hover:bg-primary-50/50 dark:hover:bg-primary-900/10'
+                      : ''
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
@@ -552,7 +557,12 @@ export default function CalendarPage() {
                       {!event.id.startsWith('task-') && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <MoreVertical className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>

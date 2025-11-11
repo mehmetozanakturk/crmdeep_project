@@ -299,13 +299,13 @@ export default function DashboardPage() {
               ))}
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-success-50 dark:bg-success-900/20 p-3 text-center">
-                <p className="text-xs text-success-600 dark:text-success-400">On-time delivery</p>
-                <p className="mt-1 text-2xl font-bold text-success-700 dark:text-success-300">92%</p>
+              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 p-3 text-center border border-emerald-200 dark:border-emerald-500/20">
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">On-time delivery</p>
+                <p className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">92%</p>
               </div>
-              <div className="rounded-lg bg-warning-50 dark:bg-warning-900/20 p-3 text-center">
-                <p className="text-xs text-warning-600 dark:text-warning-400">Avg. completion</p>
-                <p className="mt-1 text-2xl font-bold text-warning-700 dark:text-warning-300">68%</p>
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 p-3 text-center border border-amber-200 dark:border-amber-500/20">
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Avg. completion</p>
+                <p className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">68%</p>
               </div>
             </div>
           </CardContent>
