@@ -233,7 +233,7 @@ export default function DealsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Satış Fırsatları</h1>
-          <p className="mt-1 text-neutral-600 dark:text-neutral-400">Satış pipeline'ınızı yönetin</p>
+          <p className="mt-1 text-neutral-600 dark:text-neutral-400">Satış pipeline&apos;ınızı yönetin</p>
         </div>
         <Button className="flex items-center gap-2" onClick={() => setIsAddModalOpen(true)}>
           <Plus className="h-4 w-4" />

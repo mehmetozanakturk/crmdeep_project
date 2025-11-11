@@ -58,12 +58,22 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
         name: data.name,
         email: data.email,
         phone: data.phone,
+        company_id: null,
         company_name: data.company,
-        position: data.position,
+        position: data.position || null,
         status: 'active',
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
         avatar_url: null,
+        linkedin_url: null,
+        twitter_url: null,
+        address: null,
+        city: null,
+        state: null,
+        country: null,
+        notes: null,
+        last_contact_date: null,
         organization_id: organizationId,
+        created_by: 'demo',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -84,7 +94,7 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
         <DialogHeader>
           <DialogTitle>Yeni Kişi Ekle</DialogTitle>
           <DialogDescription>
-            CRM'inize yeni kişi ekleyin. Aşağıdaki bilgileri doldurun.
+            CRM&apos;inize yeni kişi ekleyin. Aşağıdaki bilgileri doldurun.
           </DialogDescription>
         </DialogHeader>
 

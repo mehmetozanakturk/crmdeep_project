@@ -4,6 +4,7 @@ export interface Contact {
   id: string;
   organization_id: string;
   company_id: string | null;
+  company_name: string | null;
   name: string;
   email: string | null;
   phone: string | null;

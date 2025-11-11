@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
@@ -92,8 +94,8 @@ export function Header({ onMobileSidebarToggle }: HeaderProps) {
           </Button>
 
           {/* User Menu */}
-          <DropdownMenu
-            trigger={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <div className="flex cursor-pointer items-center gap-2 lg:gap-3 rounded-lg px-2 lg:px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.avatar} alt={user.name} />
@@ -110,20 +112,21 @@ export function Header({ onMobileSidebarToggle }: HeaderProps) {
                   <p className="text-xs text-neutral-500 dark:text-neutral-400">{user.email}</p>
                 </div>
               </div>
-            }
-          >
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => (window.location.href = '/dashboard/settings')}>
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => (window.location.href = '/dashboard/team')}>
-              Team
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-danger-600">
-              Logout
-            </DropdownMenuItem>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => (window.location.href = '/dashboard/settings')}>
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => (window.location.href = '/dashboard/team')}>
+                Team
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-danger-600">
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>

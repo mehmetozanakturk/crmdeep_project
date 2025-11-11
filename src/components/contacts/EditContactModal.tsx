@@ -93,7 +93,7 @@ export function EditContactModal({ open, onOpenChange, contact, onContactUpdated
         email: data.email,
         phone: data.phone,
         company_name: data.company,
-        position: data.position,
+        position: data.position || null,
         status: data.status as Contact['status'],
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
         updated_at: new Date().toISOString(),

@@ -36,7 +36,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
           const pinnedKeys = JSON.parse(saved);
           const modules = pinnedKeys
             .map((key: string) => getModuleByKey(key))
-            .filter((m): m is CRMModule => m !== undefined);
+            .filter((m: CRMModule | undefined): m is CRMModule => m !== undefined);
           setPinnedModules(modules);
           console.log('Loaded menu from localStorage:', pinnedKeys);
         } else {
