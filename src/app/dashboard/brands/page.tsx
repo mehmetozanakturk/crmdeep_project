@@ -1,12 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Briefcase, Search, TrendingUp, Users, Palette, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Plus, Briefcase, Search, TrendingUp, Users, Palette, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { AddBrandModal } from '@/components/brands/AddBrandModal';
+import { EditBrandModal } from '@/components/brands/EditBrandModal';
+import { BrandDetailModal } from '@/components/brands/BrandDetailModal';
 
 interface Brand {
   id: string;
@@ -112,9 +122,35 @@ const DEMO_BRANDS: Brand[] = [
   },
 ];
 
+export type { Brand };
+
+const STORAGE_KEY = 'crmdeep_brands';
+
 export default function BrandsPage() {
-  const [brands, setBrands] = useState<Brand[]>(DEMO_BRANDS);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
+
+  // Load brands from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setBrands(JSON.parse(stored));
+    } else {
+      setBrands(DEMO_BRANDS);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_BRANDS));
+    }
+  }, []);
+
+  // Save to localStorage whenever brands change
+  useEffect(() => {
+    if (brands.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(brands));
+    }
+  }, [brands]);
 
   const filteredBrands = brands.filter((brand) =>
     brand.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -146,6 +182,30 @@ export default function BrandsPage() {
       .substring(0, 2);
   };
 
+  const handleBrandAdded = (newBrand: Brand) => {
+    setBrands([newBrand, ...brands]);
+  };
+
+  const handleBrandUpdated = (updatedBrand: Brand) => {
+    setBrands(brands.map(b => b.id === updatedBrand.id ? updatedBrand : b));
+  };
+
+  const handleDeleteBrand = (brandId: string) => {
+    if (confirm('Bu markayı silmek istediğinizden emin misiniz?')) {
+      setBrands(brands.filter(b => b.id !== brandId));
+    }
+  };
+
+  const handleEditBrand = (brand: Brand) => {
+    setSelectedBrand(brand);
+    setIsEditModalOpen(true);
+  };
+
+  const handleViewBrand = (brand: Brand) => {
+    setSelectedBrand(brand);
+    setDetailModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -156,7 +216,7 @@ export default function BrandsPage() {
             Tüm markalarınızı tek yerden yönetin
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Yeni Marka
         </Button>
@@ -263,9 +323,27 @@ export default function BrandsPage() {
                     </CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEditBrand(brand)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Düzenle
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteBrand(brand.id)}
+                      className="text-danger-600 dark:text-danger-400"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Sil
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -307,7 +385,7 @@ export default function BrandsPage() {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => handleViewBrand(brand)}>
                 Detayları Görüntüle
               </Button>
             </CardContent>
@@ -327,6 +405,34 @@ export default function BrandsPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Add Brand Modal */}
+      <AddBrandModal
+        open={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onBrandAdded={handleBrandAdded}
+      />
+
+      {/* Edit Brand Modal */}
+      {selectedBrand && (
+        <EditBrandModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          brand={selectedBrand}
+          onBrandUpdated={handleBrandUpdated}
+        />
+      )}
+
+      {/* Brand Detail Modal */}
+      {selectedBrand && (
+        <BrandDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          brand={selectedBrand}
+          onEdit={handleEditBrand}
+          onDelete={handleDeleteBrand}
+        />
       )}
     </div>
   );
