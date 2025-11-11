@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,14 @@ import {
   Plus,
   AlertCircle,
 } from 'lucide-react';
+import { AddTaskModal } from '@/components/tasks/AddTaskModal';
+import { AddNoteModal } from '@/components/notes/AddNoteModal';
+import { AddEventModal } from '@/components/calendar/AddEventModal';
+import { AddProjectModal } from '@/components/companies/AddProjectModal';
+import type { Task } from '@/app/dashboard/tasks/page';
+import type { Note } from '@/app/dashboard/notes/page';
+import type { CalendarEvent } from '@/components/calendar/AddEventModal';
+import { addRelationship, addProjectToCompany, getRelatedItems } from '@/lib/utils/relationships';
 
 interface Project {
   id: string;
@@ -131,7 +140,25 @@ export function CompanyDetailModal({
   onEdit,
   onDelete,
 }: CompanyDetailModalProps) {
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [relatedItems, setRelatedItems] = useState<{ tasks: Task[]; notes: Note[]; events: CalendarEvent[] }>({
+    tasks: [],
+    notes: [],
+    events: [],
+  });
+
   const priorityInfo = getPriorityInfo(company.priority);
+
+  // İlişkili öğeleri yükle
+  useEffect(() => {
+    if (open) {
+      const items = getRelatedItems('company', company.id);
+      setRelatedItems(items);
+    }
+  }, [open, company.id]);
 
   const handleEdit = () => {
     onOpenChange(false);
@@ -152,6 +179,98 @@ export function CompanyDetailModal({
       month: 'long',
       year: 'numeric',
     });
+  };
+
+  // Görev ekleme handler
+  const handleTaskAdded = (task: Task) => {
+    // Task'ı localStorage'a kaydet
+    const tasksStored = localStorage.getItem('crmdeep_tasks');
+    const tasks = tasksStored ? JSON.parse(tasksStored) : [];
+
+    // Task'a related_to bilgisi ekle
+    const taskWithRelation = {
+      ...task,
+      related_to: {
+        type: 'company',
+        id: company.id,
+        name: company.name,
+      },
+    };
+
+    tasks.push(taskWithRelation);
+    localStorage.setItem('crmdeep_tasks', JSON.stringify(tasks));
+
+    // İlişkiyi company'ye ekle
+    addRelationship('company', company.id, 'task', task.id);
+
+    // İlişkili öğeleri güncelle
+    const updatedItems = getRelatedItems('company', company.id);
+    setRelatedItems(updatedItems);
+
+    // Sayfayı yenile
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // Not ekleme handler
+  const handleNoteAdded = (note: Note) => {
+    const notesStored = localStorage.getItem('crmdeep_notes');
+    const notes = notesStored ? JSON.parse(notesStored) : [];
+
+    const noteWithRelation = {
+      ...note,
+      related_to: {
+        type: 'company',
+        id: company.id,
+        name: company.name,
+      },
+    };
+
+    notes.push(noteWithRelation);
+    localStorage.setItem('crmdeep_notes', JSON.stringify(notes));
+
+    addRelationship('company', company.id, 'note', note.id);
+
+    const updatedItems = getRelatedItems('company', company.id);
+    setRelatedItems(updatedItems);
+
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // Etkinlik ekleme handler
+  const handleEventAdded = (event: CalendarEvent) => {
+    const eventsStored = localStorage.getItem('crmdeep_calendar_events');
+    const events = eventsStored ? JSON.parse(eventsStored) : [];
+
+    const eventWithRelation = {
+      ...event,
+      related_to: {
+        type: 'company',
+        id: company.id,
+        name: company.name,
+      },
+    };
+
+    events.push(eventWithRelation);
+    localStorage.setItem('crmdeep_calendar_events', JSON.stringify(events));
+
+    addRelationship('company', company.id, 'event', event.id);
+
+    const updatedItems = getRelatedItems('company', company.id);
+    setRelatedItems(updatedItems);
+
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // Proje ekleme handler
+  const handleProjectAdded = (project: any) => {
+    addProjectToCompany(company.id, project);
+
+    // Company verilerini güncelle
+    window.dispatchEvent(new Event('storage'));
+
+    // Modal'ı yenile
+    onOpenChange(false);
+    setTimeout(() => onOpenChange(true), 100);
   };
 
   return (
@@ -314,7 +433,7 @@ export function CompanyDetailModal({
                 <ListTodo className="h-5 w-5" />
                 Projeler ve İşler
               </h3>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => setIsAddProjectModalOpen(true)}>
                 <Plus className="mr-1 h-4 w-4" />
                 Yeni Proje
               </Button>
@@ -395,26 +514,49 @@ export function CompanyDetailModal({
               İlişkili Öğeler
             </h3>
             <div className="grid gap-3 sm:grid-cols-3">
-              <Button variant="outline" className="h-auto flex-col py-4">
-                <CalendarDays className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                <span className="mt-2 text-sm font-medium">
-                  {company.relatedEvents.length} Etkinlik
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
+              <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 text-center">
+                <CalendarDays className="mx-auto h-6 w-6 text-primary-600 dark:text-primary-400" />
+                <p className="mt-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {relatedItems.events.length}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Etkinlik</p>
+              </div>
+              <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 text-center">
+                <ListTodo className="mx-auto h-6 w-6 text-orange-600 dark:text-orange-400" />
+                <p className="mt-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {relatedItems.tasks.length}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Görev</p>
+              </div>
+              <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 text-center">
+                <FileText className="mx-auto h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <p className="mt-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {relatedItems.notes.length}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Not</p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Hızlı Aksiyonlar */}
+          <div>
+            <h3 className="mb-3 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Hızlı Aksiyonlar
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => setIsAddTaskModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Görev Ekle
               </Button>
-              <Button variant="outline" className="h-auto flex-col py-4">
-                <ListTodo className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                <span className="mt-2 text-sm font-medium">
-                  {company.relatedTasks.length} Görev
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
+              <Button size="sm" variant="outline" onClick={() => setIsAddNoteModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Not Ekle
               </Button>
-              <Button variant="outline" className="h-auto flex-col py-4">
-                <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                <span className="mt-2 text-sm font-medium">
-                  {company.relatedNotes.length} Not
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
+              <Button size="sm" variant="outline" onClick={() => setIsAddEventModalOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Etkinlik Ekle
               </Button>
             </div>
           </div>
@@ -450,6 +592,32 @@ export function CompanyDetailModal({
           </div>
         </div>
       </DialogContent>
+
+      {/* Modals */}
+      <AddTaskModal
+        open={isAddTaskModalOpen}
+        onOpenChange={setIsAddTaskModalOpen}
+        onTaskAdded={handleTaskAdded}
+      />
+
+      <AddNoteModal
+        open={isAddNoteModalOpen}
+        onOpenChange={setIsAddNoteModalOpen}
+        onNoteAdded={handleNoteAdded}
+      />
+
+      <AddEventModal
+        open={isAddEventModalOpen}
+        onOpenChange={setIsAddEventModalOpen}
+        onEventAdded={handleEventAdded}
+      />
+
+      <AddProjectModal
+        open={isAddProjectModalOpen}
+        onOpenChange={setIsAddProjectModalOpen}
+        onProjectAdded={handleProjectAdded}
+        companyName={company.name}
+      />
     </Dialog>
   );
 }

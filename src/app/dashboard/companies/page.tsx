@@ -27,10 +27,21 @@ import {
   Pencil,
   Trash2,
   X,
+  ArrowUpDown,
+  Layers,
 } from 'lucide-react';
 import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
 import { EditCompanyModal } from '@/components/companies/EditCompanyModal';
 import { CompanyDetailModal } from '@/components/companies/CompanyDetailModal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { sortCompanies, SORT_OPTIONS, type SortOption } from '@/lib/utils/sorting';
+import { groupCompanies, GROUP_OPTIONS, type CompanyGroupOption } from '@/lib/utils/grouping';
 
 interface Project {
   id: string;
@@ -276,6 +287,8 @@ const STORAGE_KEY = 'crmdeep_companies';
 export default function CompaniesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('created-newest');
+  const [groupBy, setGroupBy] = useState<CompanyGroupOption>('none');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -314,7 +327,8 @@ export default function CompaniesPage() {
     }
   }, [companies]);
 
-  const filteredCompanies = companies.filter((company) => {
+  // Filtreleme
+  let filteredCompanies = companies.filter((company) => {
     const matchesSearch =
       company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       company.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -324,6 +338,12 @@ export default function CompaniesPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Sıralama
+  filteredCompanies = sortCompanies(filteredCompanies, sortBy);
+
+  // Gruplama
+  const groupedCompanies = groupCompanies(filteredCompanies, groupBy);
 
   const handleCompanyAdded = (newCompany: Company) => {
     // Add default values for new fields if missing
@@ -418,47 +438,84 @@ export default function CompaniesPage() {
       {/* Search and Filters */}
       <Card className="border-neutral-200 dark:border-neutral-700">
         <CardContent className="pt-6">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
-              <Input
-                placeholder="Firma, sektör veya lokasyon ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Filter className="mr-2 h-4 w-4" />
-                  {statusFilter === 'all' ? 'Tüm Durumlar' : statusOptions.find(o => o.value === statusFilter)?.label}
+          <div className="flex flex-col gap-3">
+            {/* Search and Status Filter */}
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
+                <Input
+                  placeholder="Firma, sektör veya lokasyon ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Filter className="mr-2 h-4 w-4" />
+                    {statusFilter === 'all' ? 'Tüm Durumlar' : statusOptions.find(o => o.value === statusFilter)?.label}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {statusOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => setStatusFilter(option.value)}
+                    >
+                      {option.label}
+                      {statusFilter === option.value && ' ✓'}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {(searchQuery || statusFilter !== 'all') && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                  }}
+                >
+                  <X className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {statusOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => setStatusFilter(option.value)}
-                  >
-                    {option.label}
-                    {statusFilter === option.value && ' ✓'}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {(searchQuery || statusFilter !== 'all') && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+              )}
+            </div>
+
+            {/* Sort and Group */}
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                  <SelectTrigger>
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Sıralama" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.companies.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Select value={groupBy} onValueChange={(value) => setGroupBy(value as CompanyGroupOption)}>
+                  <SelectTrigger>
+                    <Layers className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Gruplama" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GROUP_OPTIONS.companies.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -479,8 +536,21 @@ export default function CompaniesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredCompanies.map((company) => (
+        <div className="space-y-6">
+          {groupedCompanies.map((group) => (
+            <div key={group.groupName}>
+              {/* Group Header */}
+              {groupBy !== 'none' && (
+                <div className="mb-4">
+                  <h3 className={`text-lg font-semibold ${group.color || 'text-neutral-900 dark:text-neutral-100'}`}>
+                    {group.groupLabel} ({group.items.length})
+                  </h3>
+                </div>
+              )}
+
+              {/* Group Companies */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {group.items.map((company) => (
             <Card
               key={company.id}
               className="overflow-hidden transition-all hover:shadow-lg border-neutral-200 dark:border-neutral-700 cursor-pointer hover:scale-[1.02]"
@@ -573,6 +643,9 @@ export default function CompaniesPage() {
                 </div>
               </CardContent>
             </Card>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}

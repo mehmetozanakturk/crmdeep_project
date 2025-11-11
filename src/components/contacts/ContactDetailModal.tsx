@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,13 @@ import {
   Star,
   AlertCircle,
 } from 'lucide-react';
+import { AddTaskModal } from '@/components/tasks/AddTaskModal';
+import { AddNoteModal } from '@/components/notes/AddNoteModal';
+import { AddEventModal } from '@/components/calendar/AddEventModal';
+import type { Task } from '@/app/dashboard/tasks/page';
+import type { Note } from '@/app/dashboard/notes/page';
+import type { CalendarEvent } from '@/components/calendar/AddEventModal';
+import { addRelationship, getRelatedItems } from '@/lib/utils/relationships';
 
 interface ContactDetailModalProps {
   open: boolean;
@@ -72,8 +80,25 @@ export function ContactDetailModal({
   onEdit,
   onDelete,
 }: ContactDetailModalProps) {
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+  const [relatedItems, setRelatedItems] = useState<{ tasks: Task[]; notes: Note[]; events: CalendarEvent[] }>({
+    tasks: [],
+    notes: [],
+    events: [],
+  });
+
   const priorityInfo = getPriorityInfo(contact.priority || 'medium');
   const statusInfo = getStatusInfo(contact.status);
+
+  // İlişkili öğeleri yükle
+  useEffect(() => {
+    if (open) {
+      const items = getRelatedItems('contact', contact.id);
+      setRelatedItems(items);
+    }
+  }, [open, contact.id]);
 
   const handleEdit = () => {
     onOpenChange(false);
@@ -94,6 +119,81 @@ export function ContactDetailModal({
       month: 'long',
       year: 'numeric',
     });
+  };
+
+  // Görev ekleme handler
+  const handleTaskAdded = (task: Task) => {
+    const tasksStored = localStorage.getItem('crmdeep_tasks');
+    const tasks = tasksStored ? JSON.parse(tasksStored) : [];
+
+    const taskWithRelation = {
+      ...task,
+      related_to: {
+        type: 'contact',
+        id: contact.id,
+        name: contact.name,
+      },
+    };
+
+    tasks.push(taskWithRelation);
+    localStorage.setItem('crmdeep_tasks', JSON.stringify(tasks));
+
+    addRelationship('contact', contact.id, 'task', task.id);
+
+    const updatedItems = getRelatedItems('contact', contact.id);
+    setRelatedItems(updatedItems);
+
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // Not ekleme handler
+  const handleNoteAdded = (note: Note) => {
+    const notesStored = localStorage.getItem('crmdeep_notes');
+    const notes = notesStored ? JSON.parse(notesStored) : [];
+
+    const noteWithRelation = {
+      ...note,
+      related_to: {
+        type: 'contact',
+        id: contact.id,
+        name: contact.name,
+      },
+    };
+
+    notes.push(noteWithRelation);
+    localStorage.setItem('crmdeep_notes', JSON.stringify(notes));
+
+    addRelationship('contact', contact.id, 'note', note.id);
+
+    const updatedItems = getRelatedItems('contact', contact.id);
+    setRelatedItems(updatedItems);
+
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // Etkinlik ekleme handler
+  const handleEventAdded = (event: CalendarEvent) => {
+    const eventsStored = localStorage.getItem('crmdeep_calendar_events');
+    const events = eventsStored ? JSON.parse(eventsStored) : [];
+
+    const eventWithRelation = {
+      ...event,
+      related_to: {
+        type: 'contact',
+        id: contact.id,
+        name: contact.name,
+      },
+    };
+
+    events.push(eventWithRelation);
+    localStorage.setItem('crmdeep_calendar_events', JSON.stringify(events));
+
+    addRelationship('contact', contact.id, 'event', event.id);
+
+    const updatedItems = getRelatedItems('contact', contact.id);
+    setRelatedItems(updatedItems);
+
+    window.dispatchEvent(new Event('storage'));
   };
 
   return (
@@ -284,29 +384,31 @@ export function ContactDetailModal({
               İlişkili Öğeler
             </h3>
             <div className="grid gap-3 sm:grid-cols-3">
-              <Button variant="outline" className="h-auto flex-col py-4">
-                <CalendarDays className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                <span className="mt-2 text-sm font-medium">
-                  {contact.relatedEvents?.length || 0} Etkinlik
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
-              </Button>
-              <Button variant="outline" className="h-auto flex-col py-4">
-                <ListTodo className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                <span className="mt-2 text-sm font-medium">
-                  {contact.relatedTasks?.length || 0} Görev
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
-              </Button>
-              <Button variant="outline" className="h-auto flex-col py-4">
-                <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                <span className="mt-2 text-sm font-medium">
-                  {contact.relatedNotes?.length || 0} Not
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
-              </Button>
+              <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 text-center">
+                <CalendarDays className="mx-auto h-6 w-6 text-primary-600 dark:text-primary-400" />
+                <p className="mt-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {relatedItems.events.length}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Etkinlik</p>
+              </div>
+              <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 text-center">
+                <ListTodo className="mx-auto h-6 w-6 text-orange-600 dark:text-orange-400" />
+                <p className="mt-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {relatedItems.tasks.length}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Görev</p>
+              </div>
+              <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 text-center">
+                <FileText className="mx-auto h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <p className="mt-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {relatedItems.notes.length}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Not</p>
+              </div>
             </div>
           </div>
+
+          <Separator />
 
           {/* Hızlı Aksiyonlar */}
           <div>
@@ -314,15 +416,15 @@ export function ContactDetailModal({
               Hızlı Aksiyonlar
             </h3>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => setIsAddTaskModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Görev Ekle
               </Button>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => setIsAddNoteModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Not Ekle
               </Button>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => setIsAddEventModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Etkinlik Ekle
               </Button>
@@ -342,6 +444,25 @@ export function ContactDetailModal({
           </div>
         </div>
       </DialogContent>
+
+      {/* Modals */}
+      <AddTaskModal
+        open={isAddTaskModalOpen}
+        onOpenChange={setIsAddTaskModalOpen}
+        onTaskAdded={handleTaskAdded}
+      />
+
+      <AddNoteModal
+        open={isAddNoteModalOpen}
+        onOpenChange={setIsAddNoteModalOpen}
+        onNoteAdded={handleNoteAdded}
+      />
+
+      <AddEventModal
+        open={isAddEventModalOpen}
+        onOpenChange={setIsAddEventModalOpen}
+        onEventAdded={handleEventAdded}
+      />
     </Dialog>
   );
 }

@@ -28,10 +28,21 @@ import {
   Pencil,
   Trash2,
   X,
+  ArrowUpDown,
+  Layers,
 } from 'lucide-react';
 import { AddContactModal } from '@/components/contacts/AddContactModal';
 import { EditContactModal } from '@/components/contacts/EditContactModal';
 import { ContactDetailModal } from '@/components/contacts/ContactDetailModal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { sortContacts, SORT_OPTIONS, type SortOption } from '@/lib/utils/sorting';
+import { groupContacts, GROUP_OPTIONS, type ContactGroupOption } from '@/lib/utils/grouping';
 
 // Demo contacts data
 const DEMO_CONTACTS: Contact[] = [
@@ -197,6 +208,8 @@ const STORAGE_KEY = 'crmdeep_contacts';
 export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('created-newest');
+  const [groupBy, setGroupBy] = useState<ContactGroupOption>('none');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -233,7 +246,8 @@ export default function ContactsPage() {
     }
   }, [contacts]);
 
-  const filteredContacts = contacts.filter((contact) => {
+  // Filtreleme
+  let filteredContacts = contacts.filter((contact) => {
     const matchesSearch =
       contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -243,6 +257,12 @@ export default function ContactsPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Sıralama
+  filteredContacts = sortContacts(filteredContacts, sortBy);
+
+  // Gruplama
+  const groupedContacts = groupContacts(filteredContacts, groupBy);
 
   const handleContactAdded = (newContact: Contact) => {
     // Add default values for new fields if missing
@@ -345,77 +365,118 @@ export default function ContactsPage() {
       {/* Search and Filters */}
       <Card className="border-neutral-200 dark:border-neutral-700">
         <CardContent className="pt-6">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
-              <Input
-                placeholder="Kişi, e-posta, firma ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Filter className="mr-2 h-4 w-4" />
-                  {statusFilter === 'all' ? 'Tüm Durumlar' : statusOptions.find(o => o.value === statusFilter)?.label}
+          <div className="flex flex-col gap-3">
+            {/* Search and Status Filter */}
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
+                <Input
+                  placeholder="Kişi, e-posta, firma ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Filter className="mr-2 h-4 w-4" />
+                    {statusFilter === 'all' ? 'Tüm Durumlar' : statusOptions.find(o => o.value === statusFilter)?.label}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {statusOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => setStatusFilter(option.value)}
+                    >
+                      {option.label}
+                      {statusFilter === option.value && ' ✓'}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {(searchQuery || statusFilter !== 'all') && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                  }}
+                >
+                  <X className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {statusOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => setStatusFilter(option.value)}
-                  >
-                    {option.label}
-                    {statusFilter === option.value && ' ✓'}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {(searchQuery || statusFilter !== 'all') && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+              )}
+            </div>
+
+            {/* Sort and Group */}
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                  <SelectTrigger>
+                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Sıralama" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.contacts.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Select value={groupBy} onValueChange={(value) => setGroupBy(value as ContactGroupOption)}>
+                  <SelectTrigger>
+                    <Layers className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Gruplama" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GROUP_OPTIONS.contacts.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Contacts List */}
-      <Card className="border-neutral-200 dark:border-neutral-700">
-        <CardHeader className="border-b border-neutral-200 dark:border-neutral-700">
-          <CardTitle className="text-neutral-900 dark:text-neutral-100">
-            Tüm Kişiler ({filteredContacts.length})
-          </CardTitle>
-          <CardDescription className="text-neutral-600 dark:text-neutral-400">
-            İrtibat listeniz
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          {filteredContacts.length === 0 ? (
-            <div className="py-12 text-center">
-              <Users className="mx-auto h-12 w-12 text-neutral-400 dark:text-neutral-600" />
-              <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                {contacts.length === 0 ? 'Henüz kişi yok' : 'Kişi bulunamadı'}
-              </h3>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                {contacts.length === 0
-                  ? 'İlk kişinizi eklemek için yukarıdaki "Yeni Kişi" butonuna tıklayın'
-                  : 'Arama kriterlerinize uygun kişi yok. Farklı bir arama deneyin.'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredContacts.map((contact) => (
+      {filteredContacts.length === 0 ? (
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardContent className="py-12 text-center">
+            <Users className="mx-auto h-12 w-12 text-neutral-400 dark:text-neutral-600" />
+            <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              {contacts.length === 0 ? 'Henüz kişi yok' : 'Kişi bulunamadı'}
+            </h3>
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+              {contacts.length === 0
+                ? 'İlk kişinizi eklemek için yukarıdaki "Yeni Kişi" butonuna tıklayın'
+                : 'Arama kriterlerinize uygun kişi yok. Farklı bir arama deneyin.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {groupedContacts.map((group) => (
+            <Card key={group.groupName} className="border-neutral-200 dark:border-neutral-700">
+              <CardHeader className="border-b border-neutral-200 dark:border-neutral-700">
+                <CardTitle className={groupBy !== 'none' ? group.color : 'text-neutral-900 dark:text-neutral-100'}>
+                  {groupBy !== 'none' ? group.groupLabel : `Tüm Kişiler (${group.items.length})`}
+                </CardTitle>
+                <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                  {groupBy !== 'none' ? `${group.items.length} kişi` : 'İrtibat listeniz'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  {group.items.map((contact) => (
                 <div
                   key={contact.id}
                   onClick={() => handleViewContact(contact)}
@@ -501,11 +562,13 @@ export default function ContactsPage() {
                     </DropdownMenu>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Add Contact Modal */}
       <AddContactModal
