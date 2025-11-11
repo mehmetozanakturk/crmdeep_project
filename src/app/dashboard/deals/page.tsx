@@ -116,11 +116,11 @@ export default function DealsPage() {
   ]);
 
   const stages: { key: DealStage; label: string; color: string }[] = [
-    { key: 'lead', label: 'Lead', color: 'bg-neutral-100 text-neutral-700' },
-    { key: 'qualified', label: 'Qualified', color: 'bg-primary-100 text-primary-700' },
-    { key: 'proposal', label: 'Proposal', color: 'bg-blue-100 text-blue-700' },
-    { key: 'negotiation', label: 'Negotiation', color: 'bg-warning-100 text-warning-700' },
-    { key: 'closed_won', label: 'Closed Won', color: 'bg-success-100 text-success-700' },
+    { key: 'lead', label: 'Lead', color: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200' },
+    { key: 'qualified', label: 'Qualified', color: 'bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200' },
+    { key: 'proposal', label: 'Proposal', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200' },
+    { key: 'negotiation', label: 'Negotiation', color: 'bg-warning-100 text-warning-800 dark:bg-warning-900/40 dark:text-warning-200' },
+    { key: 'closed_won', label: 'Closed Won', color: 'bg-success-100 text-success-800 dark:bg-success-900/40 dark:text-success-200' },
   ];
 
   const getDealsByStage = (stage: DealStage) => {
@@ -149,8 +149,8 @@ export default function DealsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Satış Fırsatları</h1>
-          <p className="mt-1 text-neutral-600">Satış pipeline'ınızı yönetin</p>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Satış Fırsatları</h1>
+          <p className="mt-1 text-neutral-600 dark:text-neutral-400">Satış pipeline'ınızı yönetin</p>
         </div>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -160,60 +160,60 @@ export default function DealsPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="border-neutral-200 dark:border-neutral-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-600">Pipeline Değeri</p>
-                <p className="mt-1 text-3xl font-bold text-neutral-900">
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Pipeline Değeri</p>
+                <p className="mt-1 text-3xl font-bold text-neutral-900 dark:text-neutral-100">
                   {formatCurrency(totalPipelineValue)}
                 </p>
               </div>
-              <div className="rounded-lg bg-primary-100 p-3 text-primary-600">
+              <div className="rounded-lg bg-primary-100 dark:bg-primary-900/30 p-3 text-primary-600 dark:text-primary-400">
                 <DollarSign className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-neutral-200 dark:border-neutral-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-600">Toplam Fırsat</p>
-                <p className="mt-1 text-3xl font-bold text-neutral-900">{totalDeals}</p>
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Toplam Fırsat</p>
+                <p className="mt-1 text-3xl font-bold text-neutral-900 dark:text-neutral-100">{totalDeals}</p>
               </div>
-              <div className="rounded-lg bg-success-100 p-3 text-success-600">
+              <div className="rounded-lg bg-success-100 dark:bg-success-900/30 p-3 text-success-600 dark:text-success-400">
                 <Target className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-neutral-200 dark:border-neutral-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-600">Ortalama Değer</p>
-                <p className="mt-1 text-3xl font-bold text-neutral-900">
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Ortalama Değer</p>
+                <p className="mt-1 text-3xl font-bold text-neutral-900 dark:text-neutral-100">
                   {formatCurrency(averageDealSize)}
                 </p>
               </div>
-              <div className="rounded-lg bg-warning-100 p-3 text-warning-600">
+              <div className="rounded-lg bg-warning-100 dark:bg-warning-900/30 p-3 text-warning-600 dark:text-warning-400">
                 <TrendingUp className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-neutral-200 dark:border-neutral-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-neutral-600">Kazanılan</p>
-                <p className="mt-1 text-3xl font-bold text-neutral-900">{wonDeals}</p>
+                <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Kazanılan</p>
+                <p className="mt-1 text-3xl font-bold text-neutral-900 dark:text-neutral-100">{wonDeals}</p>
               </div>
-              <div className="rounded-lg bg-purple-100 p-3 text-purple-600">
+              <div className="rounded-lg bg-purple-100 dark:bg-purple-900/30 p-3 text-purple-600 dark:text-purple-400">
                 <TrendingUp className="h-6 w-6" />
               </div>
             </div>
@@ -230,55 +230,55 @@ export default function DealsPage() {
 
             return (
               <div key={stage.key} className="w-80 flex-shrink-0">
-                <Card>
-                  <CardHeader className={`${stage.color} rounded-t-lg`}>
+                <Card className="border-neutral-200 dark:border-neutral-700">
+                  <CardHeader className={`${stage.color} rounded-t-lg border-b border-neutral-200 dark:border-neutral-700`}>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{stage.label}</CardTitle>
                       <Badge variant="secondary">{stageDeals.length}</Badge>
                     </div>
-                    <CardDescription className="font-semibold">
+                    <CardDescription className="font-semibold dark:text-current">
                       {formatCurrency(stageTotal)}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3 pt-4">
+                  <CardContent className="space-y-3 pt-4 bg-neutral-50 dark:bg-neutral-900/50">
                     {stageDeals.map((deal) => (
                       <Card
                         key={deal.id}
-                        className="cursor-pointer transition-shadow hover:shadow-md"
+                        className="cursor-pointer transition-shadow hover:shadow-md border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800"
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
-                            <h3 className="font-semibold text-neutral-900">{deal.title}</h3>
+                            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">{deal.title}</h3>
                             <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </div>
 
                           <div className="mt-2 space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-neutral-600">
+                            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                               <Building2 className="h-4 w-4" />
                               {deal.company}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-neutral-600">
+                            <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                               <User className="h-4 w-4" />
                               {deal.contactPerson}
                             </div>
                           </div>
 
                           <div className="mt-3 flex items-center justify-between">
-                            <p className="text-lg font-bold text-primary-600">
+                            <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
                               {formatCurrency(deal.value)}
                             </p>
                             <Badge variant="outline">{deal.probability}%</Badge>
                           </div>
 
                           <div className="mt-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs text-neutral-500">
+                            <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
                               <Clock className="h-3 w-3" />
                               {deal.daysInStage} days
                             </div>
                             <Avatar className="h-6 w-6">
-                              <AvatarFallback className="bg-primary-100 text-xs text-primary-600">
+                              <AvatarFallback className="bg-primary-100 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400">
                                 {deal.assignee.substring(0, 2)}
                               </AvatarFallback>
                             </Avatar>
@@ -297,7 +297,7 @@ export default function DealsPage() {
 
                     {stageDeals.length === 0 && (
                       <div className="py-8 text-center">
-                        <p className="text-sm text-neutral-500">Fırsat yok</p>
+                        <p className="text-sm text-neutral-500 dark:text-neutral-400">Fırsat yok</p>
                       </div>
                     )}
                   </CardContent>
