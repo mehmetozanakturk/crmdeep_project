@@ -25,11 +25,19 @@ import {
 import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function DashboardPage() {
   const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState('30');
   // TODO: Replace with real data from Supabase
   const stats = [
     {
@@ -197,10 +205,21 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700">
-            <Calendar className="h-4 w-4" />
-            Last 30 days
-          </button>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-[180px]">
+              <Calendar className="mr-2 h-4 w-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Bugün</SelectItem>
+              <SelectItem value="7">Son 7 gün</SelectItem>
+              <SelectItem value="30">Son 30 gün</SelectItem>
+              <SelectItem value="90">Son 90 gün</SelectItem>
+              <SelectItem value="180">Son 6 ay</SelectItem>
+              <SelectItem value="365">Son 1 yıl</SelectItem>
+              <SelectItem value="all">Tüm zamanlar</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
