@@ -23,6 +23,8 @@ import {
   BarChart3,
   Workflow,
   UserCircle,
+  Briefcase,
+  PieChart,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -135,10 +137,28 @@ export const CRM_MODULES: CRMModule[] = [
     href: '/dashboard/notes',
     defaultPinned: false,
   },
+  {
+    key: 'analytics',
+    name: 'Analitik',
+    description: 'İş performansı ve raporlar',
+    icon: PieChart,
+    category: 'core',
+    href: '/dashboard/analytics',
+    defaultPinned: true,
+  },
 
   // ============================================================================
   // SALES MODULES
   // ============================================================================
+  {
+    key: 'brands',
+    name: 'Markalar',
+    description: 'Marka yönetimi ve takibi',
+    icon: Briefcase,
+    category: 'sales',
+    href: '/dashboard/brands',
+    defaultPinned: true,
+  },
   {
     key: 'leads',
     name: 'Potansiyel Müşteriler',
@@ -177,7 +197,7 @@ export const CRM_MODULES: CRMModule[] = [
     icon: FolderKanban,
     category: 'operations',
     href: '/dashboard/projects',
-    defaultPinned: false,
+    defaultPinned: true,
   },
   {
     key: 'timesheet',

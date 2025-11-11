@@ -78,7 +78,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
     setCollapsedCategories(newCollapsed);
   };
 
-  // Group modules by category
+  // Group modules by category and maintain order from CRM_MODULES
   const modulesByCategory = pinnedModules.reduce((acc, module) => {
     if (!acc[module.category]) {
       acc[module.category] = [];
@@ -86,6 +86,22 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
     acc[module.category].push(module);
     return acc;
   }, {} as Record<ModuleCategory, CRMModule[]>);
+
+  // Sort modules within each category to match CRM_MODULES order
+  Object.keys(modulesByCategory).forEach((category) => {
+    modulesByCategory[category as ModuleCategory].sort((a, b) => {
+      const indexA = CRM_MODULES.findIndex(m => m.key === a.key);
+      const indexB = CRM_MODULES.findIndex(m => m.key === b.key);
+      return indexA - indexB;
+    });
+  });
+
+  // Sort categories to put 'core' first
+  const sortedCategories = Object.entries(modulesByCategory).sort(([catA], [catB]) => {
+    if (catA === 'core') return -1;
+    if (catB === 'core') return 1;
+    return 0;
+  });
 
   const sidebarContent = (
     <>
@@ -103,7 +119,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       {/* Main Navigation */}
       <nav className="flex-1 overflow-y-auto p-4">
         <div className="space-y-1">
-          {Object.entries(modulesByCategory).map(([category, modules]) => {
+          {sortedCategories.map(([category, modules]) => {
             const categoryInfo = MODULE_CATEGORIES[category as ModuleCategory];
             const isCollapsed = collapsedCategories.has(category as ModuleCategory);
             const hasActiveModule = modules.some(
