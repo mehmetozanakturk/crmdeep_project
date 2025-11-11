@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -39,13 +39,14 @@ const taskSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskSchema>;
 
-interface AddTaskModalProps {
+interface EditTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onTaskAdded: (task: Task) => void;
+  task: Task;
+  onTaskUpdated: (task: Task) => void;
 }
 
-export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalProps) {
+export function EditTaskModal({ open, onOpenChange, task, onTaskUpdated }: EditTaskModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -58,44 +59,58 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalPr
   } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
-      status: 'todo',
-      priority: 'medium',
+      title: task.title,
+      description: task.description,
+      status: task.status,
+      priority: task.priority,
+      assignee: task.assignee.name,
+      dueDate: task.dueDate,
+      project: task.project,
+      tags: task.tags?.join(', ') || '',
     },
   });
 
   const statusValue = watch('status');
   const priorityValue = watch('priority');
 
+  useEffect(() => {
+    if (open) {
+      reset({
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        priority: task.priority,
+        assignee: task.assignee.name,
+        dueDate: task.dueDate,
+        project: task.project,
+        tags: task.tags?.join(', ') || '',
+      });
+    }
+  }, [open, task, reset]);
+
   const onSubmit = async (data: TaskFormData) => {
     setIsSubmitting(true);
     try {
-      const colors = ['#3B82F6', '#10B981', '#EC4899', '#0EA5E9', '#14B8A6', '#8B5CF6', '#EF4444', '#F59E0B'];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
-      const newTask: Task = {
-        id: Date.now().toString(),
+      const updatedTask: Task = {
+        ...task,
         title: data.title,
         description: data.description,
         status: data.status as Task['status'],
         priority: data.priority as Task['priority'],
         assignee: {
+          ...task.assignee,
           name: data.assignee,
           initials: data.assignee.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2),
-          color: randomColor,
         },
         dueDate: data.dueDate,
         project: data.project,
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
-        attachments: 0,
-        comments: 0,
-        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      onTaskAdded(newTask);
-      reset();
+      onTaskUpdated(updatedTask);
       onOpenChange(false);
     } catch (error) {
-      console.error('Error adding task:', error);
+      console.error('Error updating task:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -105,9 +120,9 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Yeni Görev Ekle</DialogTitle>
+          <DialogTitle>Görevi Düzenle</DialogTitle>
           <DialogDescription>
-            Yeni görev bilgilerini girin
+            Görev bilgilerini güncelleyin
           </DialogDescription>
         </DialogHeader>
 
@@ -247,7 +262,7 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalPr
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Görev Ekle
+              Güncelle
             </Button>
           </DialogFooter>
         </form>

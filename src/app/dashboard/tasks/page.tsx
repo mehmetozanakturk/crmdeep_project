@@ -1,10 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Plus,
   CheckSquare,
@@ -16,9 +24,15 @@ import {
   User,
   Paperclip,
   MessageSquare,
+  MoreVertical,
+  Edit,
+  Trash2,
+  ArrowRight,
 } from 'lucide-react';
+import { AddTaskModal } from '@/components/tasks/AddTaskModal';
+import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 
-interface Task {
+export interface Task {
   id: string;
   title: string;
   description: string;
@@ -30,7 +44,11 @@ interface Task {
   tags: string[];
   attachments: number;
   comments: number;
+  created_at: string;
+  updated_at: string;
 }
+
+const STORAGE_KEY = 'crmdeep_tasks';
 
 const DEMO_TASKS: Task[] = [
   {
@@ -45,6 +63,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Design', 'Frontend'],
     attachments: 3,
     comments: 5,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '2',
@@ -58,6 +78,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Documentation'],
     attachments: 0,
     comments: 2,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '3',
@@ -71,6 +93,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Design', 'Social Media'],
     attachments: 10,
     comments: 8,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '4',
@@ -84,6 +108,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Backend', 'Database'],
     attachments: 1,
     comments: 3,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '5',
@@ -97,6 +123,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Mobile', 'Backend'],
     attachments: 2,
     comments: 4,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '6',
@@ -110,6 +138,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['SEO', 'Marketing'],
     attachments: 0,
     comments: 6,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '7',
@@ -123,6 +153,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Research', 'UX'],
     attachments: 0,
     comments: 1,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '8',
@@ -136,6 +168,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Backend', 'Payment'],
     attachments: 4,
     comments: 12,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '9',
@@ -149,6 +183,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Bug', 'Testing'],
     attachments: 5,
     comments: 7,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '10',
@@ -162,6 +198,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Design', 'Email'],
     attachments: 8,
     comments: 4,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '11',
@@ -175,6 +213,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Performance', 'Frontend'],
     attachments: 2,
     comments: 9,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: '12',
@@ -188,6 +228,8 @@ const DEMO_TASKS: Task[] = [
     tags: ['Frontend', 'UI'],
     attachments: 1,
     comments: 3,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ];
 
@@ -219,7 +261,55 @@ const COLUMNS = [
 ];
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<Task[]>(DEMO_TASKS);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setTasks(JSON.parse(stored));
+    } else {
+      setTasks(DEMO_TASKS);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_TASKS));
+    }
+  }, []);
+
+  // Save to localStorage whenever tasks change
+  useEffect(() => {
+    if (tasks.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+  }, [tasks]);
+
+  const handleTaskAdded = (newTask: Task) => {
+    setTasks([newTask, ...tasks]);
+  };
+
+  const handleTaskUpdated = (updatedTask: Task) => {
+    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    if (confirm('Bu görevi silmek istediğinizden emin misiniz?')) {
+      setTasks(tasks.filter(t => t.id !== taskId));
+    }
+  };
+
+  const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
+    setTasks(tasks.map(t =>
+      t.id === taskId
+        ? { ...t, status: newStatus, updated_at: new Date().toISOString() }
+        : t
+    ));
+  };
+
+  const handleEditTask = (task: Task) => {
+    setSelectedTask(task);
+    setEditModalOpen(true);
+  };
 
   const getTasksByStatus = (status: Task['status']) => {
     return tasks.filter((task) => task.status === status);
@@ -261,7 +351,7 @@ export default function TasksPage() {
             Tüm görevlerinizi kanban board ile yönetin
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setAddModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Yeni Görev
         </Button>
@@ -356,7 +446,7 @@ export default function TasksPage() {
                 {columnTasks.map((task) => (
                   <Card
                     key={task.id}
-                    className={`border-2 cursor-pointer transition-all hover:shadow-md dark:hover:border-neutral-600 ${getPriorityColor(
+                    className={`border-2 transition-all hover:shadow-md dark:hover:border-neutral-600 ${getPriorityColor(
                       task.priority
                     )}`}
                   >
@@ -366,12 +456,52 @@ export default function TasksPage() {
                           <CardTitle className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2">
                             {task.title}
                           </CardTitle>
-                          <Badge
-                            variant="outline"
-                            className="shrink-0 text-xs"
-                          >
-                            {getPriorityLabel(task.priority)}
-                          </Badge>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Badge
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {getPriorityLabel(task.priority)}
+                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleEditTask(task)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Düzenle
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel>Durumu Değiştir</DropdownMenuLabel>
+                                {COLUMNS.filter(col => col.key !== task.status).map(col => (
+                                  <DropdownMenuItem
+                                    key={col.key}
+                                    onClick={() => handleStatusChange(task.id, col.key as Task['status'])}
+                                  >
+                                    <ArrowRight className="mr-2 h-4 w-4" />
+                                    {col.label}
+                                  </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="text-danger-600 dark:text-danger-400"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Sil
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
                         <CardDescription className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2">
                           {task.description}
@@ -461,6 +591,23 @@ export default function TasksPage() {
           );
         })}
       </div>
+
+      {/* Add Task Modal */}
+      <AddTaskModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        onTaskAdded={handleTaskAdded}
+      />
+
+      {/* Edit Task Modal */}
+      {selectedTask && (
+        <EditTaskModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          task={selectedTask}
+          onTaskUpdated={handleTaskUpdated}
+        />
+      )}
     </div>
   );
 }
