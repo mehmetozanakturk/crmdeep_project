@@ -58,6 +58,18 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
     }
 
     loadMenu();
+
+    // Listen for menu updates
+    const handleMenuUpdate = () => {
+      console.log('Menu update event received');
+      loadMenu();
+    };
+
+    window.addEventListener('menuUpdated', handleMenuUpdate);
+
+    return () => {
+      window.removeEventListener('menuUpdated', handleMenuUpdate);
+    };
   }, []);
 
   const toggleCategory = (category: ModuleCategory) => {

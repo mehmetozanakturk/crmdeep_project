@@ -91,6 +91,9 @@ export default function MenuCustomizationPage() {
     if (success) {
       setSaveMessage('✓ Kaydedildi');
       setTimeout(() => setSaveMessage(null), 2000);
+
+      // Dispatch event to update sidebar
+      window.dispatchEvent(new Event('menuUpdated'));
     } else {
       setSaveMessage('Hata! Tekrar deneyin.');
       // Revert on error
@@ -111,6 +114,9 @@ export default function MenuCustomizationPage() {
       setPinnedModules(new Set(defaults));
       setSaveMessage('✓ Varsayılana döndürüldü');
       setTimeout(() => setSaveMessage(null), 2000);
+
+      // Dispatch event to update sidebar
+      window.dispatchEvent(new Event('menuUpdated'));
     } else {
       setSaveMessage('Hata! Tekrar deneyin.');
     }
