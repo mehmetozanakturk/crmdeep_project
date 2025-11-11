@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -19,8 +22,14 @@ import {
   ArrowUpRight,
   Activity,
 } from 'lucide-react';
+import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
+import { AddProjectModal } from '@/components/projects/AddProjectModal';
+import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 
 export default function DashboardPage() {
+  const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
+  const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   // TODO: Replace with real data from Supabase
   const stats = [
     {
@@ -528,7 +537,10 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+            <button
+              onClick={() => setIsAddCompanyModalOpen(true)}
+              className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+            >
               <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
                 <Briefcase className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
               </div>
@@ -537,7 +549,10 @@ export default function DashboardPage() {
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">Create new brand</p>
               </div>
             </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+            <button
+              onClick={() => setIsAddProjectModalOpen(true)}
+              className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+            >
               <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
                 <FolderKanban className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
               </div>
@@ -546,7 +561,10 @@ export default function DashboardPage() {
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">Start new project</p>
               </div>
             </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+            <button
+              onClick={() => setIsAddTaskModalOpen(true)}
+              className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+            >
               <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
                 <CheckSquare className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
               </div>
@@ -555,18 +573,48 @@ export default function DashboardPage() {
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">Add new task</p>
               </div>
             </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 opacity-50 cursor-not-allowed">
               <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
                 <Users className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
               </div>
               <div className="text-left">
                 <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Invite Member</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Add team member</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Coming soon</p>
               </div>
             </button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <AddCompanyModal
+        open={isAddCompanyModalOpen}
+        onOpenChange={setIsAddCompanyModalOpen}
+        onCompanyAdded={() => {
+          // Refresh dashboard data
+          window.location.reload();
+        }}
+        organizationId="demo-org"
+      />
+
+      <AddProjectModal
+        open={isAddProjectModalOpen}
+        onOpenChange={setIsAddProjectModalOpen}
+        onProjectAdded={() => {
+          // Refresh dashboard data
+          window.location.reload();
+        }}
+      />
+
+      <AddTaskModal
+        open={isAddTaskModalOpen}
+        onOpenChange={setIsAddTaskModalOpen}
+        onTaskAdded={() => {
+          // Refresh dashboard data
+          window.location.reload();
+        }}
+        organizationId="demo-org"
+      />
     </div>
   );
 }
