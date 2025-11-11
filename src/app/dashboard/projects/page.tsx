@@ -16,6 +16,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Plus,
   FolderKanban,
   Search,
@@ -27,6 +34,8 @@ import {
   MoreVertical,
   Edit,
   Trash2,
+  ArrowUpDown,
+  Filter,
 } from 'lucide-react';
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
@@ -174,6 +183,8 @@ const DEMO_PROJECTS: Project[] = [
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [groupBy, setGroupBy] = useState<string>('none');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -221,9 +232,75 @@ export default function ProjectsPage() {
     setDetailModalOpen(true);
   };
 
-  const filteredProjects = projects.filter((project) =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort projects
+  const getFilteredAndSortedProjects = () => {
+    let filtered = projects.filter((project) =>
+      project.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Sort
+    filtered = filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'endDate':
+          return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
+        case 'endDate_desc':
+          return new Date(b.endDate).getTime() - new Date(a.endDate).getTime();
+        case 'progress':
+          return b.progress - a.progress;
+        case 'progress_asc':
+          return a.progress - b.progress;
+        case 'priority':
+          const priorityOrder = { high: 3, medium: 2, low: 1 };
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        case 'created_at':
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return filtered;
+  };
+
+  // Group projects
+  const getGroupedProjects = () => {
+    const filtered = getFilteredAndSortedProjects();
+
+    if (groupBy === 'none') {
+      return { 'Tüm Projeler': filtered };
+    }
+
+    const grouped: Record<string, Project[]> = {};
+
+    filtered.forEach((project) => {
+      let groupKey = '';
+
+      switch (groupBy) {
+        case 'status':
+          groupKey = project.status === 'active' ? 'Devam Ediyor' :
+                     project.status === 'completed' ? 'Tamamlandı' :
+                     project.status === 'on-hold' ? 'Beklemede' : 'Risk Altında';
+          break;
+        case 'priority':
+          groupKey = project.priority === 'high' ? 'Yüksek Öncelik' :
+                     project.priority === 'medium' ? 'Orta Öncelik' : 'Düşük Öncelik';
+          break;
+        case 'brand':
+          groupKey = project.brand;
+          break;
+        default:
+          groupKey = 'Tüm Projeler';
+      }
+
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = [];
+      }
+      grouped[groupKey].push(project);
+    });
+
+    return grouped;
+  };
+
+  const groupedProjects = getGroupedProjects();
 
   const activeProjects = projects.filter((p) => p.status === 'active').length;
   const completedProjects = projects.filter((p) => p.status === 'completed').length;
@@ -356,9 +433,9 @@ export default function ProjectsPage() {
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500 dark:text-neutral-400" />
           <Input
             type="text"
@@ -368,11 +445,48 @@ export default function ProjectsPage() {
             className="pl-9"
           />
         </div>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Sırala" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at">En Yeni</SelectItem>
+              <SelectItem value="endDate">Bitiş Tarihi (Yakın)</SelectItem>
+              <SelectItem value="endDate_desc">Bitiş Tarihi (Uzak)</SelectItem>
+              <SelectItem value="progress">İlerleme (Yüksek)</SelectItem>
+              <SelectItem value="progress_asc">İlerleme (Düşük)</SelectItem>
+              <SelectItem value="priority">Öncelik (Yüksek)</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={groupBy} onValueChange={setGroupBy}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Grupla" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Gruplama Yok</SelectItem>
+              <SelectItem value="status">Duruma Göre</SelectItem>
+              <SelectItem value="priority">Önceliğe Göre</SelectItem>
+              <SelectItem value="brand">Markaya Göre</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Projects Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {filteredProjects.map((project) => (
+      {/* Projects Grid - Grouped */}
+      {Object.entries(groupedProjects).map(([groupName, groupProjects]) => (
+        <div key={groupName} className="space-y-4">
+          {groupBy !== 'none' && (
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              {groupName}
+              <Badge variant="secondary">{groupProjects.length}</Badge>
+            </h2>
+          )}
+          <div className="grid gap-4 md:grid-cols-2">
+            {groupProjects.map((project) => (
           <Card
             key={project.id}
             className="border-neutral-200 dark:border-neutral-700 transition-all hover:shadow-md dark:hover:border-neutral-600"
@@ -492,22 +606,24 @@ export default function ProjectsPage() {
               </Button>
             </CardContent>
           </Card>
-        ))}
-      </div>
+            ))}
+          </div>
 
-      {filteredProjects.length === 0 && (
-        <Card className="border-neutral-200 dark:border-neutral-700">
-          <CardContent className="flex min-h-[200px] flex-col items-center justify-center">
-            <Search className="h-12 w-12 text-neutral-300 dark:text-neutral-600" />
-            <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              Proje bulunamadı
-            </h3>
-            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-              &quot;{searchQuery}&quot; için sonuç bulunamadı
-            </p>
-          </CardContent>
-        </Card>
-      )}
+          {groupProjects.length === 0 && (
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardContent className="flex min-h-[200px] flex-col items-center justify-center">
+                <Search className="h-12 w-12 text-neutral-300 dark:text-neutral-600" />
+                <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                  Proje bulunamadı
+                </h3>
+                <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                  {searchQuery ? `"${searchQuery}" için sonuç bulunamadı` : 'Bu grupta proje yok'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ))}
 
       {/* Add Project Modal */}
       <AddProjectModal
