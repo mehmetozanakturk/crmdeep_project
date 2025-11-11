@@ -190,6 +190,9 @@ export default function CalendarPage() {
 
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
+  };
+
+  const handleAddEventForDate = () => {
     setAddModalOpen(true);
   };
 
@@ -437,14 +440,21 @@ export default function CalendarPage() {
                   date.getDate() === today.getDate() &&
                   date.getMonth() === today.getMonth() &&
                   date.getFullYear() === today.getFullYear();
+                const isSelected =
+                  selectedDate &&
+                  date.getDate() === selectedDate.getDate() &&
+                  date.getMonth() === selectedDate.getMonth() &&
+                  date.getFullYear() === selectedDate.getFullYear();
 
                 return (
                   <div
                     key={day}
                     onClick={() => handleDateClick(date)}
-                    className={`aspect-square border rounded-lg p-1 transition-all hover:border-primary-500 dark:hover:border-primary-600 cursor-pointer ${
-                      isToday
-                        ? 'border-primary-500 dark:border-primary-600 bg-primary-50 dark:bg-primary-900/20'
+                    className={`aspect-square border-2 rounded-lg p-1 transition-all hover:border-primary-500 dark:hover:border-primary-600 cursor-pointer ${
+                      isSelected
+                        ? 'border-primary-600 dark:border-primary-500 bg-primary-100 dark:bg-primary-900/30 ring-2 ring-primary-300 dark:ring-primary-700'
+                        : isToday
+                        ? 'border-primary-400 dark:border-primary-500 bg-primary-50 dark:bg-primary-900/20'
                         : 'border-neutral-200 dark:border-neutral-700'
                     }`}
                   >
@@ -478,17 +488,40 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
 
-        {/* Upcoming Events */}
+        {/* Selected Day Details */}
         <Card className="border-neutral-200 dark:border-neutral-700">
           <CardHeader>
-            <CardTitle className="text-neutral-900 dark:text-neutral-100">Yaklaşan Etkinlikler</CardTitle>
+            <CardTitle className="text-neutral-900 dark:text-neutral-100">
+              {selectedDate
+                ? new Date(selectedDate).toLocaleDateString('tr-TR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                : 'Gün Seçin'}
+            </CardTitle>
             <CardDescription className="text-neutral-600 dark:text-neutral-400">
-              Önümüzdeki günler
+              {selectedDate
+                ? `${getEventsForDate(selectedDate).length} etkinlik`
+                : 'Takvimden bir gün seçin'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {upcomingEvents.map((event) => (
+            {selectedDate ? (
+              <div className="space-y-4">
+                {/* Add Event Button */}
+                <Button
+                  onClick={handleAddEventForDate}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Bu Güne Etkinlik Ekle
+                </Button>
+
+                {/* Events for selected date */}
+                {getEventsForDate(selectedDate).length > 0 ? (
+                  getEventsForDate(selectedDate).map((event) => (
                 <div
                   key={event.id}
                   className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 space-y-2"
@@ -564,8 +597,21 @@ export default function CalendarPage() {
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+                <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">Bu günde etkinlik yok</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
+            <CalendarIcon className="h-16 w-16 mx-auto mb-4 opacity-30" />
+            <p className="text-sm mb-2">Takvimden bir gün seçin</p>
+            <p className="text-xs">O günün etkinliklerini görmek için herhangi bir tarihe tıklayın</p>
+          </div>
+        )}
           </CardContent>
         </Card>
       </div>

@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
+import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
 
 export interface Task {
   id: string;
@@ -283,6 +284,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
@@ -331,8 +333,14 @@ export default function TasksPage() {
     ));
   };
 
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setDetailModalOpen(true);
+  };
+
   const handleEditTask = (task: Task) => {
     setSelectedTask(task);
+    setDetailModalOpen(false);
     setEditModalOpen(true);
   };
 
@@ -662,11 +670,14 @@ export default function TasksPage() {
                 {columnTasks.map((task) => (
                   <Card
                     key={task.id}
-                    className={`border-2 transition-all hover:shadow-md dark:hover:border-neutral-600 ${getPriorityColor(
+                    className={`border-2 transition-all hover:shadow-md dark:hover:border-neutral-600 cursor-pointer ${getPriorityColor(
                       task.priority
                     )}`}
                   >
-                    <CardHeader className="p-4">
+                    <CardHeader
+                      className="p-4"
+                      onClick={() => handleTaskClick(task)}
+                    >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
                           <CardTitle className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2">
@@ -685,6 +696,7 @@ export default function TasksPage() {
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 w-7 p-0"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
@@ -833,6 +845,18 @@ export default function TasksPage() {
           onOpenChange={setEditModalOpen}
           task={selectedTask}
           onTaskUpdated={handleTaskUpdated}
+        />
+      )}
+
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <TaskDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          task={selectedTask}
+          onEdit={handleEditTask}
+          onDelete={handleDeleteTask}
+          onToggleCalendar={handleToggleCalendar}
         />
       )}
     </div>
