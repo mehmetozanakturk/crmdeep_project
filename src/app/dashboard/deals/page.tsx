@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { AddDealModal } from '@/components/deals/AddDealModal';
 import { EditDealModal } from '@/components/deals/EditDealModal';
+import { DealDetailModal } from '@/components/deals/DealDetailModal';
 
 type DealStage = 'lead' | 'qualified' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
 
@@ -148,6 +149,7 @@ export default function DealsPage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
   // Load deals from localStorage
@@ -210,6 +212,11 @@ export default function DealsPage() {
   const handleEditDeal = (deal: Deal) => {
     setSelectedDeal(deal);
     setIsEditModalOpen(true);
+  };
+
+  const handleViewDeal = (deal: Deal) => {
+    setSelectedDeal(deal);
+    setDetailModalOpen(true);
   };
 
   const handleMoveStage = (dealId: string, newStage: DealStage) => {
@@ -328,6 +335,7 @@ export default function DealsPage() {
                       <Card
                         key={deal.id}
                         className="cursor-pointer transition-shadow hover:shadow-md border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800"
+                        onClick={() => handleViewDeal(deal)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
@@ -441,6 +449,17 @@ export default function DealsPage() {
           onOpenChange={setIsEditModalOpen}
           deal={selectedDeal}
           onDealUpdated={handleDealUpdated}
+        />
+      )}
+
+      {/* Deal Detail Modal */}
+      {selectedDeal && (
+        <DealDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          deal={selectedDeal}
+          onEdit={handleEditDeal}
+          onDelete={handleDeleteDeal}
         />
       )}
     </div>
