@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
+import { ProjectDetailModal } from '@/components/projects/ProjectDetailModal';
 
 export interface Project {
   id: string;
@@ -175,6 +176,7 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   // Load from localStorage on mount
@@ -212,6 +214,11 @@ export default function ProjectsPage() {
   const handleEditProject = (project: Project) => {
     setSelectedProject(project);
     setEditModalOpen(true);
+  };
+
+  const handleViewProject = (project: Project) => {
+    setSelectedProject(project);
+    setDetailModalOpen(true);
   };
 
   const filteredProjects = projects.filter((project) =>
@@ -480,7 +487,7 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => handleViewProject(project)}>
                 Projeyi Görüntüle
               </Button>
             </CardContent>
@@ -508,6 +515,17 @@ export default function ProjectsPage() {
         onOpenChange={setAddModalOpen}
         onProjectAdded={handleProjectAdded}
       />
+
+      {/* Detail Project Modal */}
+      {selectedProject && (
+        <ProjectDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          project={selectedProject}
+          onEdit={handleEditProject}
+          onDelete={handleDeleteProject}
+        />
+      )}
 
       {/* Edit Project Modal */}
       {selectedProject && (
