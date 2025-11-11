@@ -1,28 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { loadContacts, type Contact } from '@/lib/api/contacts';
-import { getCurrentOrganizationId } from '@/lib/api/organization';
+import { type Contact } from '@/lib/api/contacts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
   Users,
   Plus,
   Search,
   Mail,
   Phone,
-  Building2,
   MoreVertical,
   UserPlus,
   Filter,
   Target,
   Star,
-  Loader2,
+  Pencil,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { AddContactModal } from '@/components/contacts/AddContactModal';
+import { EditContactModal } from '@/components/contacts/EditContactModal';
 
 // Demo contacts data
 const DEMO_CONTACTS: Contact[] = [
@@ -68,28 +76,92 @@ const DEMO_CONTACTS: Contact[] = [
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
+  {
+    id: '4',
+    name: 'Ayşe Şahin',
+    email: 'ayse@example.com',
+    phone: '+90 535 456 7890',
+    position: 'Product Manager',
+    company_name: 'InnovateLab',
+    status: 'prospect',
+    tags: ['Product', 'Innovation'],
+    avatar_url: null,
+    organization_id: 'demo',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '5',
+    name: 'Can Öztürk',
+    email: 'can@example.com',
+    phone: '+90 536 567 8901',
+    position: 'Sales Director',
+    company_name: 'SalesCorp',
+    status: 'active',
+    tags: ['Sales', 'Enterprise'],
+    avatar_url: null,
+    organization_id: 'demo',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
 ];
+
+const STORAGE_KEY = 'crmdeep_contacts';
 
 export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [contacts, setContacts] = useState<Contact[]>(DEMO_CONTACTS);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
-  // No need for organization loading - using demo data
+  // Load contacts from localStorage
   useEffect(() => {
-    // In the future, load from Supabase here
-    console.log('Using demo contacts data');
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setContacts(JSON.parse(stored));
+    } else {
+      setContacts(DEMO_CONTACTS);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_CONTACTS));
+    }
   }, []);
 
-  const filteredContacts = contacts.filter(
-    (contact) =>
+  // Save to localStorage whenever contacts change
+  useEffect(() => {
+    if (contacts.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
+    }
+  }, [contacts]);
+
+  const filteredContacts = contacts.filter((contact) => {
+    const matchesSearch =
       contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+      (contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (contact.company_name && contact.company_name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const handleContactAdded = (newContact: Contact) => {
     setContacts([newContact, ...contacts]);
+  };
+
+  const handleContactUpdated = (updatedContact: Contact) => {
+    setContacts(contacts.map(c => c.id === updatedContact.id ? updatedContact : c));
+  };
+
+  const handleDeleteContact = (contactId: string) => {
+    if (confirm('Bu kişiyi silmek istediğinizden emin misiniz?')) {
+      setContacts(contacts.filter(c => c.id !== contactId));
+    }
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    setSelectedContact(contact);
+    setIsEditModalOpen(true);
   };
 
   const activeCount = contacts.filter(c => c.status === 'active' || c.status === 'client').length;
@@ -101,6 +173,15 @@ export default function ContactsPage() {
     { label: 'Aktif', value: activeCount, icon: UserPlus, color: 'text-success-600 dark:text-success-400' },
     { label: 'Lead', value: leadCount, icon: Target, color: 'text-warning-600 dark:text-warning-400' },
     { label: 'VIP', value: vipCount, icon: Star, color: 'text-purple-600 dark:text-purple-400' },
+  ];
+
+  const statusOptions = [
+    { label: 'Tümü', value: 'all' },
+    { label: 'Aktif', value: 'active' },
+    { label: 'Müşteri', value: 'client' },
+    { label: 'Lead', value: 'lead' },
+    { label: 'Potansiyel', value: 'prospect' },
+    { label: 'VIP', value: 'vip' },
   ];
 
   return (
@@ -152,16 +233,43 @@ export default function ContactsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
               <Input
-                placeholder="Kişi, e-posta ara..."
+                placeholder="Kişi, e-posta, firma ara..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              Filtrele
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Filter className="mr-2 h-4 w-4" />
+                  {statusFilter === 'all' ? 'Tüm Durumlar' : statusOptions.find(o => o.value === statusFilter)?.label}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {statusOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setStatusFilter(option.value)}
+                  >
+                    {option.label}
+                    {statusFilter === option.value && ' ✓'}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {(searchQuery || statusFilter !== 'all') && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -211,7 +319,7 @@ export default function ContactsPage() {
                         {contact.name}
                       </h3>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                        {contact.position || 'N/A'}
+                        {contact.position || 'N/A'} {contact.company_name && `• ${contact.company_name}`}
                       </p>
                       <div className="mt-1 flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
                         {contact.email && (
@@ -232,22 +340,44 @@ export default function ContactsPage() {
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1">
                       {contact.tags && contact.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">
+                        <Badge key={tag} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
                       <Badge variant={
                         contact.status === 'vip' ? 'default' :
-                        contact.status === 'client' ? 'success' :
-                        contact.status === 'lead' ? 'warning' :
-                        'secondary'
-                      }>
-                        {contact.status}
+                        contact.status === 'client' ? 'default' :
+                        contact.status === 'lead' ? 'secondary' :
+                        'outline'
+                      } className="text-xs">
+                        {contact.status === 'client' ? 'Müşteri' :
+                         contact.status === 'lead' ? 'Lead' :
+                         contact.status === 'prospect' ? 'Potansiyel' :
+                         contact.status === 'active' ? 'Aktif' :
+                         contact.status === 'vip' ? 'VIP' : contact.status}
                       </Badge>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditContact(contact)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Düzenle
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteContact(contact.id)}
+                          className="text-danger-600 dark:text-danger-400"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Sil
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}
@@ -263,6 +393,16 @@ export default function ContactsPage() {
         onContactAdded={handleContactAdded}
         organizationId="demo"
       />
+
+      {/* Edit Contact Modal */}
+      {selectedContact && (
+        <EditContactModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          contact={selectedContact}
+          onContactUpdated={handleContactUpdated}
+        />
+      )}
     </div>
   );
 }

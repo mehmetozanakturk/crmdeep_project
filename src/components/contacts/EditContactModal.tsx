@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createContact, type Contact } from '@/lib/api/contacts';
+import { type Contact } from '@/lib/api/contacts';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 
 const contactSchema = z.object({
@@ -24,19 +31,20 @@ const contactSchema = z.object({
   phone: z.string().min(10, 'Telefon en az 10 karakter olmalı'),
   company: z.string().min(2, 'Firma adı gerekli'),
   position: z.string().optional(),
+  status: z.string(),
   tags: z.string().optional(),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
-interface AddContactModalProps {
+interface EditContactModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onContactAdded: (contact: Contact) => void;
-  organizationId: string;
+  contact: Contact;
+  onContactUpdated: (contact: Contact) => void;
 }
 
-export function AddContactModal({ open, onOpenChange, onContactAdded, organizationId }: AddContactModalProps) {
+export function EditContactModal({ open, onOpenChange, contact, onContactUpdated }: EditContactModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -44,35 +52,57 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: contact.name,
+      email: contact.email || '',
+      phone: contact.phone || '',
+      company: contact.company_name || '',
+      position: contact.position || '',
+      status: contact.status || 'active',
+      tags: contact.tags?.join(', ') || '',
+    },
   });
+
+  const statusValue = watch('status');
+
+  useEffect(() => {
+    if (open) {
+      reset({
+        name: contact.name,
+        email: contact.email || '',
+        phone: contact.phone || '',
+        company: contact.company_name || '',
+        position: contact.position || '',
+        status: contact.status || 'active',
+        tags: contact.tags?.join(', ') || '',
+      });
+    }
+  }, [open, contact, reset]);
 
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
 
     try {
-      // Create new contact with localStorage (no Supabase for now)
-      const newContact: Contact = {
-        id: Date.now().toString(),
+      const updatedContact: Contact = {
+        ...contact,
         name: data.name,
         email: data.email,
         phone: data.phone,
         company_name: data.company,
         position: data.position,
-        status: 'active',
+        status: data.status as Contact['status'],
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
-        avatar_url: null,
-        organization_id: organizationId,
-        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
-      onContactAdded(newContact);
-      reset();
+      onContactUpdated(updatedContact);
       onOpenChange(false);
     } catch (error) {
-      console.error('Error adding contact:', error);
+      console.error('Error updating contact:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -82,9 +112,9 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Yeni Kişi Ekle</DialogTitle>
+          <DialogTitle>Kişiyi Düzenle</DialogTitle>
           <DialogDescription>
-            CRM'inize yeni kişi ekleyin. Aşağıdaki bilgileri doldurun.
+            Kişi bilgilerini güncelleyin
           </DialogDescription>
         </DialogHeader>
 
@@ -157,6 +187,29 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
             />
           </div>
 
+          {/* Status */}
+          <div>
+            <Label htmlFor="status">Durum *</Label>
+            <Select
+              value={statusValue}
+              onValueChange={(value) => setValue('status', value)}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Durum seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="client">Müşteri</SelectItem>
+                <SelectItem value="lead">Lead</SelectItem>
+                <SelectItem value="prospect">Potansiyel</SelectItem>
+                <SelectItem value="vip">VIP</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.status && (
+              <p className="mt-1 text-xs text-danger-600">{errors.status.message}</p>
+            )}
+          </div>
+
           {/* Tags */}
           <div>
             <Label htmlFor="tags">Etiketler (virgülle ayırın)</Label>
@@ -182,7 +235,7 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Kişi Ekle
+              Güncelle
             </Button>
           </DialogFooter>
         </form>
