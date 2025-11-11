@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { TagSelector } from '@/components/ui/tag-selector';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'İsim en az 2 karakter olmalı'),
@@ -32,7 +33,6 @@ const contactSchema = z.object({
   company: z.string().min(2, 'Firma adı gerekli'),
   position: z.string().optional(),
   status: z.string(),
-  tags: z.string().optional(),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
@@ -46,6 +46,7 @@ interface EditContactModalProps {
 
 export function EditContactModal({ open, onOpenChange, contact, onContactUpdated }: EditContactModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>(contact.tags || []);
 
   const {
     register,
@@ -63,7 +64,6 @@ export function EditContactModal({ open, onOpenChange, contact, onContactUpdated
       company: contact.company_name || '',
       position: contact.position || '',
       status: contact.status || 'active',
-      tags: contact.tags?.join(', ') || '',
     },
   });
 
@@ -78,8 +78,8 @@ export function EditContactModal({ open, onOpenChange, contact, onContactUpdated
         company: contact.company_name || '',
         position: contact.position || '',
         status: contact.status || 'active',
-        tags: contact.tags?.join(', ') || '',
       });
+      setSelectedTags(contact.tags || []);
     }
   }, [open, contact, reset]);
 
@@ -95,7 +95,7 @@ export function EditContactModal({ open, onOpenChange, contact, onContactUpdated
         company_name: data.company,
         position: data.position || null,
         status: data.status as Contact['status'],
-        tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+        tags: selectedTags,
         updated_at: new Date().toISOString(),
       };
 
@@ -212,16 +212,15 @@ export function EditContactModal({ open, onOpenChange, contact, onContactUpdated
 
           {/* Tags */}
           <div>
-            <Label htmlFor="tags">Etiketler (virgülle ayırın)</Label>
-            <Input
-              id="tags"
-              placeholder="VIP, Lead, Karar Verici"
-              {...register('tags')}
-              className="mt-1"
-            />
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              Etiketleri virgülle ayırın
-            </p>
+            <Label>Etiketler</Label>
+            <div className="mt-1">
+              <TagSelector
+                selectedTags={selectedTags}
+                onChange={setSelectedTags}
+                category="contact"
+                placeholder="Etiket seçin veya yeni oluşturun..."
+              />
+            </div>
           </div>
 
           <DialogFooter>

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { TagSelector } from '@/components/ui/tag-selector';
 
 const companySchema = z.object({
   name: z.string().min(2, 'Firma adı en az 2 karakter olmalı'),
@@ -26,7 +27,6 @@ const companySchema = z.object({
   website: z.string().optional(),
   email: z.string().email('Geçersiz email adresi').optional().or(z.literal('')),
   phone: z.string().optional(),
-  tags: z.string().optional(),
 });
 
 type CompanyFormData = z.infer<typeof companySchema>;
@@ -78,6 +78,7 @@ interface AddCompanyModalProps {
 
 export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompanyModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const {
     register,
@@ -105,7 +106,7 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
         contacts: 0,
         deals: 0,
         status: 'active',
-        tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+        tags: selectedTags,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         projects: [],
@@ -121,6 +122,7 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
 
       onCompanyAdded(newCompany);
       reset();
+      setSelectedTags([]);
       onOpenChange(false);
     } catch (error) {
       console.error('Error adding company:', error);
@@ -247,16 +249,15 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
 
             {/* Tags */}
             <div className="md:col-span-2">
-              <Label htmlFor="tags">Etiketler (virgülle ayırın)</Label>
-              <Input
-                id="tags"
-                placeholder="Kurumsal, Öncelikli, VIP"
-                {...register('tags')}
-                className="mt-1"
-              />
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Etiketleri virgülle ayırın
-              </p>
+              <Label>Etiketler</Label>
+              <div className="mt-1">
+                <TagSelector
+                  selectedTags={selectedTags}
+                  onChange={setSelectedTags}
+                  category="company"
+                  placeholder="Etiket seçin veya yeni oluşturun..."
+                />
+              </div>
             </div>
           </div>
 
