@@ -171,12 +171,12 @@ export default function DealsPage() {
   }, [deals]);
 
   const stages: { key: DealStage; label: string; color: string }[] = [
-    { key: 'lead', label: 'Lead', color: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200' },
-    { key: 'qualified', label: 'Nitelikli', color: 'bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-200' },
-    { key: 'proposal', label: 'Teklif', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200' },
-    { key: 'negotiation', label: 'Görüşme', color: 'bg-warning-100 text-warning-800 dark:bg-warning-900/40 dark:text-warning-200' },
-    { key: 'closed_won', label: 'Kazanıldı', color: 'bg-success-100 text-success-800 dark:bg-success-900/40 dark:text-success-200' },
-    { key: 'closed_lost', label: 'Kaybedildi', color: 'bg-danger-100 text-danger-800 dark:bg-danger-900/40 dark:text-danger-200' },
+    { key: 'lead', label: 'Lead', color: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100' },
+    { key: 'qualified', label: 'Nitelikli', color: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-100' },
+    { key: 'proposal', label: 'Teklif', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100' },
+    { key: 'negotiation', label: 'Görüşme', color: 'bg-warning-100 text-warning-800 dark:bg-warning-900 dark:text-warning-100' },
+    { key: 'closed_won', label: 'Kazanıldı', color: 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-100' },
+    { key: 'closed_lost', label: 'Kaybedildi', color: 'bg-danger-100 text-danger-800 dark:bg-danger-900 dark:text-danger-100' },
   ];
 
   const getDealsByStage = (stage: DealStage) => {
@@ -312,14 +312,14 @@ export default function DealsPage() {
       </div>
 
       {/* Kanban Board - Compact 6 Column Layout */}
-      <div className="overflow-x-auto">
-        <div className="flex gap-3 pb-4 min-w-max">
+      <div>
+        <div className="grid grid-cols-6 gap-3 pb-4">
           {stages.map((stage) => {
             const stageDeals = getDealsByStage(stage.key);
             const stageTotal = getStageTotal(stage.key);
 
             return (
-              <div key={stage.key} className="w-56 flex-shrink-0">
+              <div key={stage.key} className="min-w-0">
                 <Card className="border-neutral-200 dark:border-neutral-700 h-full">
                   <CardHeader className={`${stage.color} rounded-t-lg border-b border-neutral-200 dark:border-neutral-700 pb-3`}>
                     <div className="flex items-center justify-between">

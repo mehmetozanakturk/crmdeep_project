@@ -60,17 +60,17 @@ export function DealDetailModal({
   const getStageColor = (stage: Deal['stage']) => {
     switch (stage) {
       case 'lead':
-        return 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
+        return 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-100';
       case 'qualified':
-        return 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400';
+        return 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-100';
       case 'proposal':
-        return 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400';
+        return 'bg-warning-100 text-warning-700 dark:bg-warning-900 dark:text-warning-100';
       case 'negotiation':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-100';
       case 'closed_won':
-        return 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400';
+        return 'bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-100';
       case 'closed_lost':
-        return 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400';
+        return 'bg-danger-100 text-danger-700 dark:bg-danger-900 dark:text-danger-100';
     }
   };
 
@@ -170,7 +170,7 @@ export function DealDetailModal({
             </h3>
             <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-neutral-100 dark:bg-neutral-800">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
+                <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-100">
                   {deal.assignee.split(' ').map(n => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
@@ -191,7 +191,7 @@ export function DealDetailModal({
                   <Badge
                     key={index}
                     variant="secondary"
-                    className="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300"
+                    className="bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-100"
                   >
                     <Tag className="mr-1 h-3 w-3" />
                     {tag}

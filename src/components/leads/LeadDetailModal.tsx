@@ -41,25 +41,25 @@ export function LeadDetailModal({
     switch (status) {
       case 'new':
         return (
-          <Badge className="bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
+          <Badge className="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-100">
             Yeni
           </Badge>
         );
       case 'contacted':
         return (
-          <Badge className="bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">
+          <Badge className="bg-warning-100 text-warning-700 dark:bg-warning-900 dark:text-warning-100">
             İletişimde
           </Badge>
         );
       case 'qualified':
         return (
-          <Badge className="bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400">
+          <Badge className="bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-100">
             Nitelikli
           </Badge>
         );
       case 'unqualified':
         return (
-          <Badge className="bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
+          <Badge className="bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
             Niteliksiz
           </Badge>
         );
@@ -86,7 +86,7 @@ export function LeadDetailModal({
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <Avatar className="h-14 w-14">
-                <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 text-lg">
+                <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-100 text-lg">
                   {lead.name.split(' ').map((n) => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>

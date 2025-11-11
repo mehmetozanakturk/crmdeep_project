@@ -43,28 +43,28 @@ export function ProjectDetailModal({
     switch (status) {
       case 'active':
         return (
-          <Badge className="bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
+          <Badge className="bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-100">
             <Clock className="mr-1 h-3 w-3" />
             Devam Ediyor
           </Badge>
         );
       case 'completed':
         return (
-          <Badge className="bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400">
+          <Badge className="bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-100">
             <CheckCircle2 className="mr-1 h-3 w-3" />
             Tamamlandı
           </Badge>
         );
       case 'on-hold':
         return (
-          <Badge className="bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400">
+          <Badge className="bg-warning-100 text-warning-700 dark:bg-warning-900 dark:text-warning-100">
             <AlertCircle className="mr-1 h-3 w-3" />
             Beklemede
           </Badge>
         );
       case 'at-risk':
         return (
-          <Badge className="bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
+          <Badge className="bg-danger-100 text-danger-700 dark:bg-danger-900 dark:text-danger-100">
             <AlertCircle className="mr-1 h-3 w-3" />
             Risk Altında
           </Badge>
