@@ -59,12 +59,14 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Protected routes
+  // Protected routes - only redirect to login if explicitly no session
   if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirectTo', request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect to dashboard if already logged in
+  // Redirect to dashboard if already logged in (but less aggressive)
   if (
     session &&
     (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register')

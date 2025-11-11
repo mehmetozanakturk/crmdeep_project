@@ -71,9 +71,10 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
-        // Success! Redirect to dashboard
-        router.push('/dashboard');
-        router.refresh();
+        // Success! Wait a moment for session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Now redirect to dashboard
+        window.location.href = '/dashboard';
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
