@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +14,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, StickyNote, Search, Pin, Trash2, Edit, MoreVertical } from 'lucide-react';
+import {
+  Plus,
+  StickyNote,
+  Search,
+  Pin,
+  Trash2,
+  Edit,
+  MoreVertical,
+  Filter,
+  ArrowUpDown,
+  Briefcase,
+  User,
+  FolderKanban,
+  Lightbulb,
+  Users,
+  MoreHorizontal,
+} from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { AddNoteModal } from '@/components/notes/AddNoteModal';
 import { EditNoteModal } from '@/components/notes/EditNoteModal';
+import { NoteDetailModal } from '@/components/notes/NoteDetailModal';
 
 export interface Note {
   id: string;
@@ -25,11 +50,30 @@ export interface Note {
   pinned: boolean;
   createdAt: string;
   tags: string[];
+  category: 'work' | 'personal' | 'project' | 'idea' | 'meeting' | 'other';
+  taskId?: string;
   created_at: string;
   updated_at: string;
 }
 
 const STORAGE_KEY = 'crmdeep_notes';
+
+const getCategoryInfo = (category: Note['category']) => {
+  switch (category) {
+    case 'work':
+      return { label: 'İş', icon: Briefcase, color: 'text-blue-600 dark:text-blue-400' };
+    case 'personal':
+      return { label: 'Kişisel', icon: User, color: 'text-green-600 dark:text-green-400' };
+    case 'project':
+      return { label: 'Proje', icon: FolderKanban, color: 'text-purple-600 dark:text-purple-400' };
+    case 'idea':
+      return { label: 'Fikir', icon: Lightbulb, color: 'text-yellow-600 dark:text-yellow-400' };
+    case 'meeting':
+      return { label: 'Toplantı', icon: Users, color: 'text-orange-600 dark:text-orange-400' };
+    case 'other':
+      return { label: 'Diğer', icon: MoreHorizontal, color: 'text-neutral-600 dark:text-neutral-400' };
+  }
+};
 
 const DEMO_NOTES: Note[] = [
   {
@@ -40,6 +84,7 @@ const DEMO_NOTES: Note[] = [
     pinned: true,
     createdAt: '2024-02-15',
     tags: ['Toplantı', 'TechCorp'],
+    category: 'meeting',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -51,6 +96,7 @@ const DEMO_NOTES: Note[] = [
     pinned: true,
     createdAt: '2024-02-14',
     tags: ['Fikir', 'Proje'],
+    category: 'idea',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -62,6 +108,7 @@ const DEMO_NOTES: Note[] = [
     pinned: false,
     createdAt: '2024-02-13',
     tags: ['Todo'],
+    category: 'work',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -73,6 +120,7 @@ const DEMO_NOTES: Note[] = [
     pinned: false,
     createdAt: '2024-02-12',
     tags: ['Referans'],
+    category: 'project',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -83,7 +131,12 @@ export default function NotesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'created' | 'updated' | 'title'>('updated');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -127,12 +180,78 @@ export default function NotesPage() {
 
   const handleEditNote = (note: Note) => {
     setSelectedNote(note);
+    setDetailModalOpen(false);
     setEditModalOpen(true);
   };
 
-  const filteredNotes = notes.filter((note) =>
-    note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleViewNote = (note: Note) => {
+    setSelectedNote(note);
+    setDetailModalOpen(true);
+  };
+
+  // Filter by category
+  const filterByCategory = (notes: Note[]) => {
+    if (categoryFilter === 'all') return notes;
+    return notes.filter((note) => note.category === categoryFilter);
+  };
+
+  // Filter by date
+  const filterByDate = (notes: Note[]) => {
+    if (dateFilter === 'all') return notes;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    switch (dateFilter) {
+      case 'today':
+        return notes.filter((note) => {
+          const noteDate = new Date(note.created_at);
+          const noteDateOnly = new Date(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate());
+          return noteDateOnly.getTime() === today.getTime();
+        });
+      case 'week':
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return notes.filter((note) => new Date(note.created_at) >= weekAgo);
+      case 'month':
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return notes.filter((note) => new Date(note.created_at) >= monthAgo);
+      default:
+        return notes;
+    }
+  };
+
+  // Sort notes
+  const sortNotes = (notes: Note[]) => {
+    return [...notes].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'created':
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case 'updated':
+          comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+          break;
+        case 'title':
+          comparison = a.title.localeCompare(b.title, 'tr');
+          break;
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  // Apply all filters
+  const filteredNotes = sortNotes(
+    filterByDate(
+      filterByCategory(
+        notes.filter((note) =>
+          note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          note.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+      )
+    )
   );
 
   const pinnedNotes = filteredNotes.filter((n) => n.pinned);
@@ -151,15 +270,71 @@ export default function NotesPage() {
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
-        <Input
-          type="text"
-          placeholder="Not ara..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search and Filters */}
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+          <Input
+            type="text"
+            placeholder="Not ara..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {/* Category Filter */}
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <Filter className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Kategori" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm Kategoriler</SelectItem>
+            <SelectItem value="work">İş</SelectItem>
+            <SelectItem value="personal">Kişisel</SelectItem>
+            <SelectItem value="project">Proje</SelectItem>
+            <SelectItem value="idea">Fikir</SelectItem>
+            <SelectItem value="meeting">Toplantı</SelectItem>
+            <SelectItem value="other">Diğer</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Date Filter */}
+        <Select value={dateFilter} onValueChange={setDateFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Tarih" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tüm Zamanlar</SelectItem>
+            <SelectItem value="today">Bugün</SelectItem>
+            <SelectItem value="week">Son 7 Gün</SelectItem>
+            <SelectItem value="month">Son 30 Gün</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Sort */}
+        <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <ArrowUpDown className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Sırala" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="updated">Son Güncelleme</SelectItem>
+            <SelectItem value="created">Oluşturulma Tarihi</SelectItem>
+            <SelectItem value="title">Başlık</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Sort Order Toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+          title={sortOrder === 'asc' ? 'Artan' : 'Azalan'}
+        >
+          <ArrowUpDown className="h-4 w-4" />
+        </Button>
       </div>
 
       {pinnedNotes.length > 0 && (
@@ -167,7 +342,11 @@ export default function NotesPage() {
           <h2 className="mb-3 text-sm font-semibold text-neutral-600 dark:text-neutral-400">SABİTLENMİŞ</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {pinnedNotes.map((note) => (
-              <Card key={note.id} className={`${note.color} border-neutral-200 dark:border-neutral-700`}>
+              <Card
+                key={note.id}
+                className={`${note.color} border-neutral-200 dark:border-neutral-700 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]`}
+                onClick={() => handleViewNote(note)}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-base">{note.title}</CardTitle>
@@ -176,13 +355,21 @@ export default function NotesPage() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => handleTogglePin(note.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTogglePin(note.id);
+                        }}
                       >
                         <Pin className="h-4 w-4 fill-current" />
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -207,14 +394,26 @@ export default function NotesPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{note.content}</p>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {React.createElement(getCategoryInfo(note.category).icon, {
+                        className: `h-3 w-3 ${getCategoryInfo(note.category).color}`,
+                      })}
+                      <span className="ml-1">{getCategoryInfo(note.category).label}</span>
+                    </Badge>
                     {note.tags.map((tag, idx) => (
                       <Badge key={idx} variant="secondary" className="text-xs">
                         {tag}
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{note.createdAt}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {new Date(note.created_at).toLocaleDateString('tr-TR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -227,7 +426,11 @@ export default function NotesPage() {
           <h2 className="mb-3 text-sm font-semibold text-neutral-600 dark:text-neutral-400">DİĞER NOTLAR</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {regularNotes.map((note) => (
-              <Card key={note.id} className={`${note.color} border-neutral-200 dark:border-neutral-700`}>
+              <Card
+                key={note.id}
+                className={`${note.color} border-neutral-200 dark:border-neutral-700 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]`}
+                onClick={() => handleViewNote(note)}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-base">{note.title}</CardTitle>
@@ -236,13 +439,21 @@ export default function NotesPage() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => handleTogglePin(note.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTogglePin(note.id);
+                        }}
                       >
                         <Pin className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -267,14 +478,26 @@ export default function NotesPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-neutral-700 dark:text-neutral-300 line-clamp-3">{note.content}</p>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {React.createElement(getCategoryInfo(note.category).icon, {
+                        className: `h-3 w-3 ${getCategoryInfo(note.category).color}`,
+                      })}
+                      <span className="ml-1">{getCategoryInfo(note.category).label}</span>
+                    </Badge>
                     {note.tags.map((tag, idx) => (
                       <Badge key={idx} variant="secondary" className="text-xs">
                         {tag}
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{note.createdAt}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {new Date(note.created_at).toLocaleDateString('tr-TR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -288,6 +511,18 @@ export default function NotesPage() {
         onOpenChange={setAddModalOpen}
         onNoteAdded={handleNoteAdded}
       />
+
+      {/* Note Detail Modal */}
+      {selectedNote && (
+        <NoteDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          note={selectedNote}
+          onEdit={handleEditNote}
+          onDelete={handleDeleteNote}
+          onTogglePin={handleTogglePin}
+        />
+      )}
 
       {/* Edit Note Modal */}
       {selectedNote && (

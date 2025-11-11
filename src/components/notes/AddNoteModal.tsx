@@ -30,6 +30,7 @@ const noteSchema = z.object({
   title: z.string().min(2, 'Başlık en az 2 karakter olmalı'),
   content: z.string().min(5, 'İçerik en az 5 karakter olmalı'),
   color: z.string(),
+  category: z.enum(['work', 'personal', 'project', 'idea', 'meeting', 'other']),
   tags: z.string().optional(),
 });
 
@@ -55,10 +56,12 @@ export function AddNoteModal({ open, onOpenChange, onNoteAdded }: AddNoteModalPr
     resolver: zodResolver(noteSchema),
     defaultValues: {
       color: 'bg-yellow-100 dark:bg-yellow-900/30',
+      category: 'other',
     },
   });
 
   const colorValue = watch('color');
+  const categoryValue = watch('category');
 
   const onSubmit = async (data: NoteFormData) => {
     setIsSubmitting(true);
@@ -71,6 +74,7 @@ export function AddNoteModal({ open, onOpenChange, onNoteAdded }: AddNoteModalPr
         pinned: false,
         createdAt: new Date().toLocaleDateString('tr-TR'),
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+        category: data.category,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -122,6 +126,30 @@ export function AddNoteModal({ open, onOpenChange, onNoteAdded }: AddNoteModalPr
               />
               {errors.content && (
                 <p className="mt-1 text-xs text-danger-600">{errors.content.message}</p>
+              )}
+            </div>
+
+            {/* Category */}
+            <div>
+              <Label htmlFor="category">Kategori *</Label>
+              <Select
+                value={categoryValue}
+                onValueChange={(value: any) => setValue('category', value)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Kategori seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="work">İş</SelectItem>
+                  <SelectItem value="personal">Kişisel</SelectItem>
+                  <SelectItem value="project">Proje</SelectItem>
+                  <SelectItem value="idea">Fikir</SelectItem>
+                  <SelectItem value="meeting">Toplantı</SelectItem>
+                  <SelectItem value="other">Diğer</SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.category && (
+                <p className="mt-1 text-xs text-danger-600">{errors.category.message}</p>
               )}
             </div>
 
