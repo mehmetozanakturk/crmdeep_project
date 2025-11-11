@@ -122,9 +122,9 @@ export function DealDetailModal({
               Fırsat Değeri
             </h3>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-success-50 dark:bg-success-950 border border-success-200 dark:border-success-700">
-                <DollarSign className="h-6 w-6 text-success-700 dark:text-success-300" />
-                <span className="text-2xl font-bold text-success-800 dark:text-success-200">
+              <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-success-50 dark:bg-neutral-800 border border-success-200 dark:border-success-600">
+                <DollarSign className="h-6 w-6 text-success-700 dark:text-success-400" />
+                <span className="text-2xl font-bold text-success-800 dark:text-success-300">
                   {formatCurrency(deal.value)}
                 </span>
               </div>
@@ -221,21 +221,21 @@ export function DealDetailModal({
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 rounded-lg bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-700">
-              <div className="flex items-center gap-2 text-primary-700 dark:text-primary-300 mb-1">
+            <div className="p-4 rounded-lg bg-primary-50 dark:bg-neutral-800 border border-primary-200 dark:border-primary-600">
+              <div className="flex items-center gap-2 text-primary-700 dark:text-primary-400 mb-1">
                 <Calendar className="h-4 w-4" />
                 <span className="text-xs font-medium">Aşamada</span>
               </div>
-              <p className="text-2xl font-bold text-primary-800 dark:text-primary-200">
+              <p className="text-2xl font-bold text-primary-800 dark:text-primary-300">
                 {deal.daysInStage} gün
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-success-50 dark:bg-success-950 border border-success-200 dark:border-success-700">
-              <div className="flex items-center gap-2 text-success-700 dark:text-success-300 mb-1">
+            <div className="p-4 rounded-lg bg-success-50 dark:bg-neutral-800 border border-success-200 dark:border-success-600">
+              <div className="flex items-center gap-2 text-success-700 dark:text-success-400 mb-1">
                 <Target className="h-4 w-4" />
                 <span className="text-xs font-medium">Beklenen</span>
               </div>
-              <p className="text-lg font-bold text-success-800 dark:text-success-200">
+              <p className="text-lg font-bold text-success-800 dark:text-success-300">
                 {formatCurrency(deal.value * (deal.probability / 100))}
               </p>
             </div>
