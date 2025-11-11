@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { AddEventModal, type CalendarEvent } from '@/components/calendar/AddEventModal';
 import { EditEventModal } from '@/components/calendar/EditEventModal';
+import { EventDetailModal } from '@/components/calendar/EventDetailModal';
 import { type Task } from '../tasks/page';
 
 const EVENTS_STORAGE_KEY = 'crmdeep_calendar_events';
@@ -102,6 +103,7 @@ export default function CalendarPage() {
   const [calendarTasks, setCalendarTasks] = useState<Task[]>([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const today = new Date();
@@ -171,8 +173,14 @@ export default function CalendarPage() {
     }
   };
 
+  const handleViewEvent = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setDetailModalOpen(true);
+  };
+
   const handleEditEvent = (event: CalendarEvent) => {
     setSelectedEvent(event);
+    setDetailModalOpen(false);
     setEditModalOpen(true);
   };
 
@@ -524,12 +532,8 @@ export default function CalendarPage() {
                   getEventsForDate(selectedDate).map((event) => (
                 <div
                   key={event.id}
-                  onClick={() => !event.id.startsWith('task-') && handleEditEvent(event)}
-                  className={`rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 space-y-2 transition-all ${
-                    !event.id.startsWith('task-')
-                      ? 'cursor-pointer hover:border-primary-500 dark:hover:border-primary-600 hover:bg-primary-50/50 dark:hover:bg-primary-900/10'
-                      : ''
-                  }`}
+                  onClick={() => handleViewEvent(event)}
+                  className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 space-y-2 transition-all cursor-pointer hover:border-primary-500 dark:hover:border-primary-600 hover:bg-primary-50/50 dark:hover:bg-primary-900/10"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
@@ -633,6 +637,17 @@ export default function CalendarPage() {
         onEventAdded={handleEventAdded}
         preselectedDate={selectedDate}
       />
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <EventDetailModal
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          event={selectedEvent}
+          onEdit={handleEditEvent}
+          onDelete={handleDeleteEvent}
+        />
+      )}
 
       {/* Edit Event Modal */}
       {selectedEvent && (
