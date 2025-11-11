@@ -28,26 +28,22 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
   const [collapsedCategories, setCollapsedCategories] = useState<Set<ModuleCategory>>(new Set());
 
   useEffect(() => {
-    async function loadMenu() {
+    function loadMenu() {
       try {
-        const organizationId = await getCurrentOrganizationId();
-
-        if (!organizationId) {
-          setPinnedModules(getDefaultPinnedModules());
-          setIsLoading(false);
-          return;
-        }
-
-        const preferences = await loadMenuPreferences(organizationId);
-
-        if (preferences.length === 0) {
-          await initializeDefaultMenu(organizationId);
-          setPinnedModules(getDefaultPinnedModules());
-        } else {
-          const modules = preferences
-            .map((pref) => getModuleByKey(pref.module_key))
+        // Load from localStorage instead of Supabase
+        const saved = localStorage.getItem('menuPreferences');
+        if (saved) {
+          const pinnedKeys = JSON.parse(saved);
+          const modules = pinnedKeys
+            .map((key: string) => getModuleByKey(key))
             .filter((m): m is CRMModule => m !== undefined);
           setPinnedModules(modules);
+          console.log('Loaded menu from localStorage:', pinnedKeys);
+        } else {
+          // Use defaults
+          const defaults = getDefaultPinnedModules();
+          setPinnedModules(defaults);
+          localStorage.setItem('menuPreferences', JSON.stringify(defaults.map(m => m.key)));
         }
       } catch (error) {
         console.error('Error loading menu:', error);

@@ -24,38 +24,62 @@ import {
 } from 'lucide-react';
 import { AddContactModal } from '@/components/contacts/AddContactModal';
 
+// Demo contacts data
+const DEMO_CONTACTS: Contact[] = [
+  {
+    id: '1',
+    name: 'Ahmet Yılmaz',
+    email: 'ahmet@example.com',
+    phone: '+90 532 123 4567',
+    position: 'CEO',
+    company_name: 'TechCorp',
+    status: 'client',
+    tags: ['VIP', 'Tech'],
+    avatar_url: null,
+    organization_id: 'demo',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Zeynep Kaya',
+    email: 'zeynep@example.com',
+    phone: '+90 533 234 5678',
+    position: 'Marketing Manager',
+    company_name: 'Digital Agency',
+    status: 'lead',
+    tags: ['Marketing'],
+    avatar_url: null,
+    organization_id: 'demo',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Mehmet Demir',
+    email: 'mehmet@example.com',
+    phone: '+90 534 345 6789',
+    position: 'CTO',
+    company_name: 'StartupHub',
+    status: 'vip',
+    tags: ['VIP', 'Tech', 'Startup'],
+    avatar_url: null,
+    organization_id: 'demo',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
+
 export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>(DEMO_CONTACTS);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load organization and contacts
+  // No need for organization loading - using demo data
   useEffect(() => {
-    async function init() {
-      setIsLoading(true);
-
-      // Get organization ID
-      const orgId = await getCurrentOrganizationId();
-      console.log('Organization ID:', orgId);
-
-      if (!orgId) {
-        console.error('No organization found');
-        setIsLoading(false);
-        return;
-      }
-
-      setOrganizationId(orgId);
-
-      // Load contacts
-      const data = await loadContacts(orgId);
-      console.log('Loaded contacts:', data);
-      setContacts(data);
-      setIsLoading(false);
-    }
-
-    init();
+    // In the future, load from Supabase here
+    console.log('Using demo contacts data');
   }, []);
 
   const filteredContacts = contacts.filter(
@@ -78,46 +102,6 @@ export default function ContactsPage() {
     { label: 'Lead', value: leadCount, icon: Target, color: 'text-warning-600 dark:text-warning-400' },
     { label: 'VIP', value: vipCount, icon: Star, color: 'text-purple-600 dark:text-purple-400' },
   ];
-
-  if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary-600 mx-auto" />
-          <p className="mt-4 text-neutral-600 dark:text-neutral-400">Yükleniyor...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!organizationId) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Card className="max-w-md border-neutral-200 dark:border-neutral-700">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <Users className="mx-auto h-12 w-12 text-warning-500 dark:text-warning-400" />
-              <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                Organization Yükleniyor...
-              </h3>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                İlk defa giriş yaptınız. Organization otomatik oluşturuluyor.
-              </p>
-              <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-                Eğer bu mesaj devam ederse, tarayıcı console&apos;unu açın (F12) ve hataları kontrol edin.
-              </p>
-              <Button
-                className="mt-6"
-                onClick={() => window.location.reload()}
-              >
-                Sayfayı Yenile
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -277,7 +261,7 @@ export default function ContactsPage() {
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onContactAdded={handleContactAdded}
-        organizationId={organizationId}
+        organizationId="demo"
       />
     </div>
   );

@@ -25,54 +25,35 @@ export default function MenuCustomizationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
 
-  // Load organization and preferences
+  // Load preferences from localStorage
   useEffect(() => {
-    async function init() {
-      setIsLoading(true);
+    setIsLoading(true);
 
-      // Get organization ID
-      const orgId = await getCurrentOrganizationId();
-      console.log('Menu - Organization ID:', orgId);
-
-      if (!orgId) {
-        console.error('No organization found');
-        setIsLoading(false);
-        return;
-      }
-
-      setOrganizationId(orgId);
-
-      // Load preferences
-      try {
-        const preferences = await loadMenuPreferences(orgId);
-        console.log('Loaded menu preferences:', preferences);
-        const pinned = new Set(preferences.map((p) => p.module_key));
-
-        if (pinned.size === 0) {
-          // No preferences, use defaults
-          const defaults = getDefaultPinnedModules().map((m) => m.key);
-          setPinnedModules(new Set(defaults));
-        } else {
-          setPinnedModules(pinned);
-        }
-      } catch (error) {
-        console.error('Error loading preferences:', error);
-        // Use defaults on error
+    try {
+      // Try to load from localStorage
+      const saved = localStorage.getItem('menuPreferences');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setPinnedModules(new Set(parsed));
+        console.log('Loaded menu preferences from localStorage:', parsed);
+      } else {
+        // Use defaults
         const defaults = getDefaultPinnedModules().map((m) => m.key);
         setPinnedModules(new Set(defaults));
-      } finally {
-        setIsLoading(false);
+        localStorage.setItem('menuPreferences', JSON.stringify(defaults));
       }
+    } catch (error) {
+      console.error('Error loading menu preferences:', error);
+      // Use defaults on error
+      const defaults = getDefaultPinnedModules().map((m) => m.key);
+      setPinnedModules(new Set(defaults));
+    } finally {
+      setIsLoading(false);
     }
-
-    init();
   }, []);
 
-  const togglePin = async (moduleKey: string) => {
-    if (!organizationId) return;
-
+  const togglePin = (moduleKey: string) => {
     const wasPinned = pinnedModules.has(moduleKey);
     const newPinned = new Set(pinnedModules);
 
@@ -85,16 +66,16 @@ export default function MenuCustomizationPage() {
     setPinnedModules(newPinned);
     setIsSaving(true);
 
-    // Save to Supabase
-    const success = await saveMenuPreference(organizationId, moduleKey, !wasPinned);
-
-    if (success) {
+    try {
+      // Save to localStorage
+      localStorage.setItem('menuPreferences', JSON.stringify(Array.from(newPinned)));
       setSaveMessage('✓ Kaydedildi');
       setTimeout(() => setSaveMessage(null), 2000);
 
       // Dispatch event to update sidebar
       window.dispatchEvent(new Event('menuUpdated'));
-    } else {
+    } catch (error) {
+      console.error('Error saving menu preference:', error);
       setSaveMessage('Hata! Tekrar deneyin.');
       // Revert on error
       setPinnedModules(new Set(wasPinned ? [...newPinned, moduleKey] : [...newPinned].filter(k => k !== moduleKey)));
@@ -103,21 +84,20 @@ export default function MenuCustomizationPage() {
     setIsSaving(false);
   };
 
-  const resetToDefault = async () => {
-    if (!organizationId) return;
-
+  const resetToDefault = () => {
     setIsSaving(true);
-    const success = await resetMenuToDefaults(organizationId);
 
-    if (success) {
+    try {
       const defaults = getDefaultPinnedModules().map((m) => m.key);
       setPinnedModules(new Set(defaults));
+      localStorage.setItem('menuPreferences', JSON.stringify(defaults));
       setSaveMessage('✓ Varsayılana döndürüldü');
       setTimeout(() => setSaveMessage(null), 2000);
 
       // Dispatch event to update sidebar
       window.dispatchEvent(new Event('menuUpdated'));
-    } else {
+    } catch (error) {
+      console.error('Error resetting to defaults:', error);
       setSaveMessage('Hata! Tekrar deneyin.');
     }
 
@@ -130,35 +110,6 @@ export default function MenuCustomizationPage() {
     return (
       <div className="flex h-96 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary-600 dark:text-primary-400" />
-      </div>
-    );
-  }
-
-  if (!organizationId) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Card className="max-w-md border-neutral-200 dark:border-neutral-700">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <Settings className="mx-auto h-12 w-12 text-warning-500 dark:text-warning-400" />
-              <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                Organization Yükleniyor...
-              </h3>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                İlk defa giriş yaptınız. Organization otomatik oluşturuluyor.
-              </p>
-              <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-                Eğer bu mesaj devam ederse, tarayıcı console&apos;unu açın (F12) ve hataları kontrol edin.
-              </p>
-              <Button
-                className="mt-6"
-                onClick={() => window.location.reload()}
-              >
-                Sayfayı Yenile
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
