@@ -12,10 +12,16 @@ import {
   MODULE_CATEGORIES,
   type ModuleCategory
 } from '@/lib/modules';
-import { Settings, Menu, ChevronDown, ChevronRight } from 'lucide-react';
+import { Settings, Menu, ChevronDown, ChevronRight, X } from 'lucide-react';
 import { loadMenuPreferences, initializeDefaultMenu } from '@/lib/api/menu-preferences';
+import { getCurrentOrganizationId } from '@/lib/api/organization';
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobileOpen: boolean;
+  onMobileClose: () => void;
+}
+
+export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const [pinnedModules, setPinnedModules] = useState<CRMModule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,19 +30,20 @@ export function Sidebar() {
   useEffect(() => {
     async function loadMenu() {
       try {
-        // TODO: Get actual organization ID from context/props
-        const organizationId = 'temp-org-id'; // Temporary mock
+        const organizationId = await getCurrentOrganizationId();
 
-        // Load preferences from Supabase
+        if (!organizationId) {
+          setPinnedModules(getDefaultPinnedModules());
+          setIsLoading(false);
+          return;
+        }
+
         const preferences = await loadMenuPreferences(organizationId);
 
         if (preferences.length === 0) {
-          // No preferences found, initialize defaults
           await initializeDefaultMenu(organizationId);
-          // Use default modules
           setPinnedModules(getDefaultPinnedModules());
         } else {
-          // Map preferences to modules
           const modules = preferences
             .map((pref) => getModuleByKey(pref.module_key))
             .filter((m): m is CRMModule => m !== undefined);
@@ -44,7 +51,6 @@ export function Sidebar() {
         }
       } catch (error) {
         console.error('Error loading menu:', error);
-        // Fallback to defaults
         setPinnedModules(getDefaultPinnedModules());
       } finally {
         setIsLoading(false);
@@ -73,11 +79,21 @@ export function Sidebar() {
     return acc;
   }, {} as Record<ModuleCategory, CRMModule[]>);
 
-  return (
-    <aside className="flex h-full w-64 flex-col border-r border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+  const sidebarContent = (
+    <>
+      {/* Mobile Close Button */}
+      <div className="flex items-center justify-between p-4 lg:hidden border-b border-neutral-200 dark:border-neutral-700">
+        <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">CRMDeep</h2>
+        <button
+          onClick={onMobileClose}
+          className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
       {/* Main Navigation */}
       <nav className="flex-1 overflow-y-auto p-4">
-        {/* Grouped Menu by Category */}
         <div className="space-y-1">
           {Object.entries(modulesByCategory).map(([category, modules]) => {
             const categoryInfo = MODULE_CATEGORIES[category as ModuleCategory];
@@ -118,6 +134,7 @@ export function Sidebar() {
                         <Link
                           key={module.key}
                           href={module.href}
+                          onClick={onMobileClose}
                           className={cn(
                             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                             isActive
@@ -143,6 +160,7 @@ export function Sidebar() {
         {/* Settings Link */}
         <Link
           href="/dashboard/settings"
+          onClick={onMobileClose}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
             pathname.startsWith('/dashboard/settings')
@@ -157,6 +175,7 @@ export function Sidebar() {
         {/* Customize Menu Button */}
         <Link
           href="/dashboard/settings/menu"
+          onClick={onMobileClose}
           className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 py-2 text-sm font-medium text-neutral-600 transition-colors hover:border-primary-500 hover:bg-primary-50 hover:text-primary-600 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-primary-500 dark:hover:bg-primary-900/20 dark:hover:text-primary-400"
         >
           <Menu className="h-4 w-4" />
@@ -176,6 +195,28 @@ export function Sidebar() {
           <p className="text-xs text-neutral-500 dark:text-neutral-400">Free Plan</p>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      {/* Sidebar - Desktop: always visible, Mobile: slide in */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-neutral-200 bg-white transition-transform duration-300 dark:border-neutral-700 dark:bg-neutral-900 lg:relative lg:translate-x-0',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

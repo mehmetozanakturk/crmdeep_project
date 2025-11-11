@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Search, Sun, Moon } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Menu } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/components/theme-provider';
 
-export function Header() {
+interface HeaderProps {
+  onMobileSidebarToggle: () => void;
+}
+
+export function Header({ onMobileSidebarToggle }: HeaderProps) {
   const { theme, setTheme } = useTheme();
 
   // TODO: Replace with real user data from Supabase
@@ -36,11 +40,21 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
-      <div className="flex h-16 items-center justify-between px-6">
-        {/* Left: Logo and Search */}
-        <div className="flex items-center gap-6">
+      <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+        {/* Left: Hamburger Menu (Mobile) + Logo + Search */}
+        <div className="flex items-center gap-3 lg:gap-6">
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onMobileSidebarToggle}
+            className="lg:hidden text-neutral-700 dark:text-neutral-300"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
           <Link href="/dashboard" className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-primary-600">CRMDeep</h1>
+            <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">CRMDeep</h1>
           </Link>
 
           {/* Search Bar */}
@@ -55,7 +69,7 @@ export function Header() {
         </div>
 
         {/* Right: Theme Toggle, Notifications and User Menu */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 lg:gap-4">
           {/* Theme Toggle */}
           <Button
             variant="ghost"
@@ -80,7 +94,7 @@ export function Header() {
           {/* User Menu */}
           <DropdownMenu
             trigger={
-              <div className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              <div className="flex cursor-pointer items-center gap-2 lg:gap-3 rounded-lg px-2 lg:px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback>
@@ -91,7 +105,7 @@ export function Header() {
                       .toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden text-left md:block">
+                <div className="hidden text-left lg:block">
                   <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{user.name}</p>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400">{user.email}</p>
                 </div>
