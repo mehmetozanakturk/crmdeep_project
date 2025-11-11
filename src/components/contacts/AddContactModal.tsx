@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { createContact, type Contact } from '@/lib/api/contacts';
 import {
   Dialog,
   DialogContent,
@@ -31,10 +32,11 @@ type ContactFormData = z.infer<typeof contactSchema>;
 interface AddContactModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onContactAdded: (contact: any) => void;
+  onContactAdded: (contact: Contact) => void;
+  organizationId: string;
 }
 
-export function AddContactModal({ open, onOpenChange, onContactAdded }: AddContactModalProps) {
+export function AddContactModal({ open, onOpenChange, onContactAdded, organizationId }: AddContactModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -50,23 +52,22 @@ export function AddContactModal({ open, onOpenChange, onContactAdded }: AddConta
     setIsSubmitting(true);
 
     try {
-      // TODO: Save to Supabase
-      // For now, just create a mock contact
-      const newContact = {
-        id: Math.random().toString(36).substring(7),
+      const newContact = await createContact(organizationId, {
         name: data.name,
         email: data.email,
         phone: data.phone,
         company: data.company,
-        position: data.position || 'N/A',
+        position: data.position,
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
-        avatar: '',
-        lastContact: 'Just now',
-      };
+      });
 
-      onContactAdded(newContact);
-      reset();
-      onOpenChange(false);
+      if (newContact) {
+        onContactAdded(newContact);
+        reset();
+        onOpenChange(false);
+      } else {
+        console.error('Failed to create contact');
+      }
     } catch (error) {
       console.error('Error adding contact:', error);
     } finally {

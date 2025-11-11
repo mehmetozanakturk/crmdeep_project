@@ -182,13 +182,13 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Dashboard</h1>
-          <p className="mt-1 text-neutral-600">
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Dashboard</h1>
+          <p className="mt-1 text-neutral-600 dark:text-neutral-400">
             Welcome back! Here&apos;s a comprehensive overview of your business.
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50">
+          <button className="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700">
             <Calendar className="h-4 w-4" />
             Last 30 days
           </button>
@@ -204,15 +204,15 @@ export default function DashboardPage() {
           return (
             <Card key={stat.name}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-neutral-600">
+                <CardTitle className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
                   {stat.name}
                 </CardTitle>
-                <div className={`rounded-lg bg-neutral-100 p-2 ${stat.color}`}>
+                <div className={`rounded-lg bg-neutral-100 dark:bg-neutral-700 p-2 ${stat.color}`}>
                   <Icon className="h-4 w-4" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-neutral-900">{stat.value}</div>
+                <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">{stat.value}</div>
                 <div className="mt-2 flex items-center justify-between">
                   <div className="flex items-center gap-1 text-xs">
                     {isPositive ? (
@@ -224,7 +224,7 @@ export default function DashboardPage() {
                       {stat.change}
                     </span>
                   </div>
-                  <span className="text-xs text-neutral-500">{stat.description}</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">{stat.description}</span>
                 </div>
               </CardContent>
             </Card>
@@ -250,11 +250,11 @@ export default function DashboardPage() {
                   <div className="mb-2 flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className={`h-3 w-3 rounded-full ${stage.color}`} />
-                      <span className="font-medium text-neutral-900">{stage.stage}</span>
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">{stage.stage}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-neutral-600">{stage.count} deals</span>
-                      <span className="font-semibold text-neutral-900">{stage.value}</span>
+                      <span className="text-neutral-600 dark:text-neutral-400">{stage.count} deals</span>
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{stage.value}</span>
                     </div>
                   </div>
                   <Progress
@@ -265,10 +265,10 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 rounded-lg bg-primary-50 p-3">
+            <div className="mt-4 rounded-lg bg-primary-50 dark:bg-primary-900/20 p-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-primary-900">Total Pipeline Value</span>
-                <span className="text-lg font-bold text-primary-600">$665,500</span>
+                <span className="text-sm font-medium text-primary-900 dark:text-primary-100">Total Pipeline Value</span>
+                <span className="text-lg font-bold text-primary-600 dark:text-primary-400">$665,500</span>
               </div>
             </div>
           </CardContent>
@@ -288,10 +288,10 @@ export default function DashboardPage() {
               {projectStatus.map((item) => (
                 <div key={item.status}>
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-neutral-900">{item.status}</span>
+                    <span className="font-medium text-neutral-900 dark:text-neutral-100">{item.status}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-neutral-600">{item.count} projects</span>
-                      <span className="font-semibold text-neutral-900">{item.percentage}%</span>
+                      <span className="text-neutral-600 dark:text-neutral-400">{item.count} projects</span>
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{item.percentage}%</span>
                     </div>
                   </div>
                   <Progress value={item.percentage} className="h-2" />
@@ -299,13 +299,13 @@ export default function DashboardPage() {
               ))}
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-success-50 p-3 text-center">
-                <p className="text-xs text-success-600">On-time delivery</p>
-                <p className="mt-1 text-2xl font-bold text-success-700">92%</p>
+              <div className="rounded-lg bg-success-50 dark:bg-success-900/20 p-3 text-center">
+                <p className="text-xs text-success-600 dark:text-success-400">On-time delivery</p>
+                <p className="mt-1 text-2xl font-bold text-success-700 dark:text-success-300">92%</p>
               </div>
-              <div className="rounded-lg bg-warning-50 p-3 text-center">
-                <p className="text-xs text-warning-600">Avg. completion</p>
-                <p className="mt-1 text-2xl font-bold text-warning-700">68%</p>
+              <div className="rounded-lg bg-warning-50 dark:bg-warning-900/20 p-3 text-center">
+                <p className="text-xs text-warning-600 dark:text-warning-400">Avg. completion</p>
+                <p className="mt-1 text-2xl font-bold text-warning-700 dark:text-warning-300">68%</p>
               </div>
             </div>
           </CardContent>
@@ -325,31 +325,31 @@ export default function DashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-neutral-200">
-                  <th className="pb-3 text-left text-xs font-medium text-neutral-500">BRAND NAME</th>
-                  <th className="pb-3 text-right text-xs font-medium text-neutral-500">REVENUE</th>
-                  <th className="pb-3 text-right text-xs font-medium text-neutral-500">GROWTH</th>
-                  <th className="pb-3 text-right text-xs font-medium text-neutral-500">PROJECTS</th>
-                  <th className="pb-3 text-right text-xs font-medium text-neutral-500">STATUS</th>
+                <tr className="border-b border-neutral-200 dark:border-neutral-700">
+                  <th className="pb-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400">BRAND NAME</th>
+                  <th className="pb-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">REVENUE</th>
+                  <th className="pb-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">GROWTH</th>
+                  <th className="pb-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">PROJECTS</th>
+                  <th className="pb-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">STATUS</th>
                 </tr>
               </thead>
               <tbody>
                 {brandPerformance.map((brand, index) => (
-                  <tr key={brand.name} className="border-b border-neutral-100">
-                    <td className="py-3 text-sm font-medium text-neutral-900">{brand.name}</td>
-                    <td className="py-3 text-right text-sm font-semibold text-neutral-900">
+                  <tr key={brand.name} className="border-b border-neutral-100 dark:border-neutral-800">
+                    <td className="py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">{brand.name}</td>
+                    <td className="py-3 text-right text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                       {brand.revenue}
                     </td>
                     <td className="py-3 text-right text-sm">
                       <span
                         className={
-                          brand.growth.startsWith('+') ? 'text-success-600' : 'text-danger-600'
+                          brand.growth.startsWith('+') ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'
                         }
                       >
                         {brand.growth}
                       </span>
                     </td>
-                    <td className="py-3 text-right text-sm text-neutral-600">{brand.projects}</td>
+                    <td className="py-3 text-right text-sm text-neutral-600 dark:text-neutral-400">{brand.projects}</td>
                     <td className="py-3 text-right">
                       <Badge
                         variant={
@@ -400,20 +400,20 @@ export default function DashboardPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
-                    <p className="text-sm text-neutral-900">
+                    <p className="text-sm text-neutral-900 dark:text-neutral-100">
                       <span className="font-medium">{activity.user}</span>{' '}
-                      <span className="text-neutral-600">{activity.action}</span>{' '}
+                      <span className="text-neutral-600 dark:text-neutral-400">{activity.action}</span>{' '}
                       <span className="font-medium">{activity.target}</span>
                     </p>
                     <div className="flex items-center gap-2">
-                      <Clock className="h-3 w-3 text-neutral-400" />
-                      <span className="text-xs text-neutral-500">{activity.time}</span>
+                      <Clock className="h-3 w-3 text-neutral-400 dark:text-neutral-500" />
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">{activity.time}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="mt-4 w-full rounded-lg border border-neutral-200 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50">
+            <button className="mt-4 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800">
               View all activity
             </button>
           </CardContent>
@@ -435,7 +435,7 @@ export default function DashboardPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-neutral-900">{task.title}</p>
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{task.title}</p>
                         <Badge
                           variant={
                             task.priority === 'high'
@@ -448,7 +448,7 @@ export default function DashboardPage() {
                           {task.priority}
                         </Badge>
                       </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-neutral-500">
+                      <div className="mt-1 flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
                         <span>{task.brand}</span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
@@ -462,12 +462,12 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Progress value={task.progress} className="h-1.5" />
-                    <span className="text-xs font-medium text-neutral-600">{task.progress}%</span>
+                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">{task.progress}%</span>
                   </div>
                 </div>
               ))}
             </div>
-            <button className="mt-4 w-full rounded-lg border border-neutral-200 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50">
+            <button className="mt-4 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800">
               View all tasks
             </button>
           </CardContent>
@@ -486,10 +486,10 @@ export default function DashboardPage() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {teamPerformance.map((member) => (
-              <div key={member.name} className="rounded-lg border border-neutral-200 p-4">
+              <div key={member.name} className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4">
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarFallback className="bg-primary-100 text-primary-600">
+                    <AvatarFallback className="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
                       {member.name
                         .split(' ')
                         .map((n) => n[0])
@@ -497,19 +497,19 @@ export default function DashboardPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-neutral-900">{member.name}</p>
-                    <p className="text-xs text-neutral-500">{member.role}</p>
+                    <p className="font-medium text-neutral-900 dark:text-neutral-100">{member.name}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{member.role}</p>
                   </div>
                 </div>
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-600">Tasks completed</span>
-                    <span className="font-semibold text-neutral-900">{member.tasksCompleted}</span>
+                    <span className="text-neutral-600 dark:text-neutral-400">Tasks completed</span>
+                    <span className="font-semibold text-neutral-900 dark:text-neutral-100">{member.tasksCompleted}</span>
                   </div>
                   <div>
                     <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-neutral-600">Efficiency</span>
-                      <span className="font-semibold text-neutral-900">{member.efficiency}%</span>
+                      <span className="text-neutral-600 dark:text-neutral-400">Efficiency</span>
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{member.efficiency}%</span>
                     </div>
                     <Progress value={member.efficiency} className="h-2" />
                   </div>
@@ -528,40 +528,40 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 p-4 transition-all hover:border-primary-500 hover:bg-primary-50">
-              <div className="rounded-lg bg-neutral-100 p-2 group-hover:bg-primary-100">
-                <Briefcase className="h-5 w-5 text-neutral-500 group-hover:text-primary-600" />
+            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+              <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
+                <Briefcase className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-neutral-900">Add Brand</p>
-                <p className="text-xs text-neutral-500">Create new brand</p>
+                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Add Brand</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Create new brand</p>
               </div>
             </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 p-4 transition-all hover:border-primary-500 hover:bg-primary-50">
-              <div className="rounded-lg bg-neutral-100 p-2 group-hover:bg-primary-100">
-                <FolderKanban className="h-5 w-5 text-neutral-500 group-hover:text-primary-600" />
+            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+              <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
+                <FolderKanban className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-neutral-900">New Project</p>
-                <p className="text-xs text-neutral-500">Start new project</p>
+                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">New Project</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Start new project</p>
               </div>
             </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 p-4 transition-all hover:border-primary-500 hover:bg-primary-50">
-              <div className="rounded-lg bg-neutral-100 p-2 group-hover:bg-primary-100">
-                <CheckSquare className="h-5 w-5 text-neutral-500 group-hover:text-primary-600" />
+            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+              <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
+                <CheckSquare className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-neutral-900">Create Task</p>
-                <p className="text-xs text-neutral-500">Add new task</p>
+                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Create Task</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Add new task</p>
               </div>
             </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 p-4 transition-all hover:border-primary-500 hover:bg-primary-50">
-              <div className="rounded-lg bg-neutral-100 p-2 group-hover:bg-primary-100">
-                <Users className="h-5 w-5 text-neutral-500 group-hover:text-primary-600" />
+            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+              <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
+                <Users className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-neutral-900">Invite Member</p>
-                <p className="text-xs text-neutral-500">Add team member</p>
+                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Invite Member</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Add team member</p>
               </div>
             </button>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { loadContacts, type Contact } from '@/lib/api/contacts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,82 +25,43 @@ import { AddContactModal } from '@/components/contacts/AddContactModal';
 export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // TODO: Load from Supabase
-  const [contacts, setContacts] = useState([
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@techcorp.com',
-      phone: '+1 (555) 123-4567',
-      company: 'TechCorp Solutions',
-      position: 'CEO',
-      tags: ['VIP', 'Decision Maker'],
-      avatar: '',
-      lastContact: '2 hours ago',
-    },
-    {
-      id: '2',
-      name: 'Michael Chen',
-      email: 'michael@digitalmarket.com',
-      phone: '+1 (555) 234-5678',
-      company: 'Digital Marketing Co',
-      position: 'Marketing Director',
-      tags: ['Lead'],
-      avatar: '',
-      lastContact: '1 day ago',
-    },
-    {
-      id: '3',
-      name: 'Emily Rodriguez',
-      email: 'emily.r@ecommerceplus.com',
-      phone: '+1 (555) 345-6789',
-      company: 'E-commerce Plus',
-      position: 'Product Manager',
-      tags: ['Client', 'Active'],
-      avatar: '',
-      lastContact: '3 days ago',
-    },
-    {
-      id: '4',
-      name: 'David Kim',
-      email: 'david@startup.io',
-      phone: '+1 (555) 456-7890',
-      company: 'StartUp Ventures',
-      position: 'CTO',
-      tags: ['Prospect'],
-      avatar: '',
-      lastContact: '1 week ago',
-    },
-    {
-      id: '5',
-      name: 'Lisa Anderson',
-      email: 'lisa@creativeagency.com',
-      phone: '+1 (555) 567-8901',
-      company: 'Creative Agency',
-      position: 'Creative Director',
-      tags: ['Client', 'VIP'],
-      avatar: '',
-      lastContact: '2 weeks ago',
-    },
-  ]);
+  // TODO: Get actual organization ID
+  const organizationId = 'temp-org-id';
+
+  // Load contacts on mount
+  useEffect(() => {
+    async function fetchContacts() {
+      setIsLoading(true);
+      const data = await loadContacts(organizationId);
+      setContacts(data);
+      setIsLoading(false);
+    }
+
+    fetchContacts();
+  }, [organizationId]);
 
   const filteredContacts = contacts.filter(
     (contact) =>
       contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.company.toLowerCase().includes(searchQuery.toLowerCase())
+      (contact.email && contact.email.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleContactAdded = (newContact: any) => {
+  const handleContactAdded = (newContact: Contact) => {
     setContacts([newContact, ...contacts]);
   };
 
+  const activeCount = contacts.filter(c => c.status === 'active' || c.status === 'client').length;
+  const leadCount = contacts.filter(c => c.status === 'lead' || c.status === 'prospect').length;
+  const vipCount = contacts.filter(c => c.status === 'vip').length;
+
   const stats = [
     { label: 'Toplam Kişi', value: contacts.length, icon: Users, color: 'text-primary-600' },
-    { label: 'Aktif', value: 3, icon: UserPlus, color: 'text-success-600' },
-    { label: 'Lead', value: 1, icon: Target, color: 'text-warning-600' },
-    { label: 'VIP', value: 2, icon: Star, color: 'text-purple-600' },
+    { label: 'Aktif', value: activeCount, icon: UserPlus, color: 'text-success-600' },
+    { label: 'Lead', value: leadCount, icon: Target, color: 'text-warning-600' },
+    { label: 'VIP', value: vipCount, icon: Star, color: 'text-purple-600' },
   ];
 
   return (
@@ -180,7 +142,7 @@ export default function ContactsPage() {
               >
                 <div className="flex items-center gap-4">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={contact.avatar} />
+                    <AvatarImage src={contact.avatar_url || ''} />
                     <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400">
                       {contact.name
                         .split(' ')
@@ -193,30 +155,39 @@ export default function ContactsPage() {
                       {contact.name}
                     </h3>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      {contact.position} at {contact.company}
+                      {contact.position || 'N/A'}
                     </p>
                     <div className="mt-1 flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                      <span className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {contact.email}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        {contact.phone}
-                      </span>
+                      {contact.email && (
+                        <span className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {contact.email}
+                        </span>
+                      )}
+                      {contact.phone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {contact.phone}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex gap-1">
-                    {contact.tags.map((tag) => (
+                    {contact.tags && contact.tags.map((tag) => (
                       <Badge key={tag} variant="secondary">
                         {tag}
                       </Badge>
                     ))}
-                  </div>
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {contact.lastContact}
+                    <Badge variant={
+                      contact.status === 'vip' ? 'default' :
+                      contact.status === 'client' ? 'success' :
+                      contact.status === 'lead' ? 'warning' :
+                      'secondary'
+                    }>
+                      {contact.status}
+                    </Badge>
                   </div>
                   <Button variant="ghost" size="sm">
                     <MoreVertical className="h-4 w-4" />
@@ -245,6 +216,7 @@ export default function ContactsPage() {
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onContactAdded={handleContactAdded}
+        organizationId={organizationId}
       />
     </div>
   );

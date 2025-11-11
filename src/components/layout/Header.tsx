@@ -45,7 +45,7 @@ export function Header() {
 
           {/* Search Bar */}
           <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
             <Input
               type="search"
               placeholder="Search..."
@@ -61,13 +61,13 @@ export function Header() {
             variant="ghost"
             size="icon"
             onClick={toggleTheme}
-            className="dark:hover:bg-neutral-800"
+            className="text-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative dark:hover:bg-neutral-800">
+          <Button variant="ghost" size="icon" className="relative text-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800">
             <Bell className="h-5 w-5" />
             <Badge
               variant="destructive"
@@ -80,7 +80,7 @@ export function Header() {
           {/* User Menu */}
           <DropdownMenu
             trigger={
-              <div className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-neutral-100 transition-colors">
+              <div className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback>
@@ -92,8 +92,8 @@ export function Header() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden text-left md:block">
-                  <p className="text-sm font-medium text-neutral-900">{user.name}</p>
-                  <p className="text-xs text-neutral-500">{user.email}</p>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{user.name}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{user.email}</p>
                 </div>
               </div>
             }
