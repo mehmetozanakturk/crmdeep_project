@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, TrendingUp, TrendingDown, DollarSign, Eye, MousePointer, Target, BarChart3, MoreVertical, Edit, Trash2 } from 'lucide-react';
-import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
+import { Plus, Search, TrendingUp, TrendingDown, DollarSign, Eye, MousePointer, Target, BarChart3, MoreVertical, Edit, Trash2, Loader2 } from 'lucide-react';
+import { getActiveWorkspaceId } from '@/lib/workspace-storage';
+import * as CampaignsAPI from '@/lib/api/campaigns';
 import {
   Select,
   SelectContent,
@@ -89,29 +90,37 @@ export default function CampaignsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const loadedCampaigns = initializeWorkspaceData<Campaign>('campaigns', DEMO_CAMPAIGNS);
-      setCampaigns(loadedCampaigns);
-    } catch (error) {
-      console.error('Error loading campaigns:', error);
-      setCampaigns(DEMO_CAMPAIGNS);
-    }
+    loadCampaignsData();
 
-    // Listen for workspace changes
     const handleWorkspaceChange = () => {
-      try {
-        const loadedCampaigns = getWorkspaceData<Campaign>('campaigns', DEMO_CAMPAIGNS);
-        setCampaigns(loadedCampaigns);
-      } catch (error) {
-        console.error('Error loading campaigns after workspace change:', error);
-      }
+      loadCampaignsData();
     };
 
     window.addEventListener('workspaceChanged', handleWorkspaceChange);
     return () => window.removeEventListener('workspaceChanged', handleWorkspaceChange);
   }, []);
+
+  const loadCampaignsData = async () => {
+    try {
+      setLoading(true);
+      const workspaceId = getActiveWorkspaceId();
+      if (!workspaceId) {
+        console.warn('No active workspace');
+        setLoading(false);
+        return;
+      }
+
+      const data = await CampaignsAPI.loadCampaigns(workspaceId);
+      setCampaigns(data);
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredCampaigns = campaigns.filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -156,6 +165,19 @@ export default function CampaignsPage() {
   const totalClicks = filteredCampaigns.reduce((sum, c) => sum + c.clicks, 0);
   const totalConversions = filteredCampaigns.reduce((sum, c) => sum + c.conversions, 0);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary-600 dark:text-primary-400" />
+          <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            Kampanyalar yükleniyor...
+          </h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -165,7 +187,7 @@ export default function CampaignsPage() {
             Kampanyalar
           </h1>
           <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-            Meta ve Google Ads kampanyalarınızı tek yerden yönetin
+            {campaigns.length} kampanya Supabase'den yüklendi
           </p>
         </div>
         <Button onClick={() => alert('Kampanya ekleme yakında!')}>
