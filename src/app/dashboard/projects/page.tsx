@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -184,7 +183,6 @@ const DEMO_PROJECTS: Project[] = [
 ];
 
 export default function ProjectsPage() {
-  const pathname = usePathname();
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('created_at');
@@ -196,7 +194,7 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
 
-  // Load from localStorage - reload when pathname changes (on navigation)
+  // Load from localStorage on mount AND poll every 1 second
   useEffect(() => {
     const loadProjects = () => {
       console.log('[Projects] Loading projects from localStorage...');
@@ -214,48 +212,27 @@ export default function ProjectsPage() {
 
     loadProjects();
 
-    // Listen for storage changes (when projects are added from other components)
-    const handleStorageChange = (e: StorageEvent) => {
-      console.log('[Projects] Storage event received:', e.key);
-      if (e.key === STORAGE_KEY) {
-        loadProjects();
-      }
-    };
-
-    // Listen for custom event (for same-window updates)
+    // Listen for custom event
     const handleCustomEvent = () => {
       console.log('[Projects] projectsUpdated event received!');
       loadProjects();
     };
 
-    // Listen for visibility change (when user switches back to this page)
-    const handleVisibilityChange = () => {
-      console.log('[Projects] Visibility changed, hidden:', document.hidden);
-      if (!document.hidden) {
-        loadProjects();
-      }
-    };
-
-    // Listen for window focus (when user comes back to this tab/window)
-    const handleFocus = () => {
-      console.log('[Projects] Window focused!');
+    // POLLING: Check localStorage every 1 second (guaranteed to work!)
+    const pollInterval = setInterval(() => {
+      console.log('[Projects] Polling localStorage...');
       loadProjects();
-    };
+    }, 1000);
 
-    console.log('[Projects] Setting up event listeners...');
-    window.addEventListener('storage', handleStorageChange);
+    console.log('[Projects] Setting up event listener and polling...');
     window.addEventListener('projectsUpdated', handleCustomEvent);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
 
     return () => {
-      console.log('[Projects] Cleaning up event listeners...');
-      window.removeEventListener('storage', handleStorageChange);
+      console.log('[Projects] Cleaning up...');
+      clearInterval(pollInterval);
       window.removeEventListener('projectsUpdated', handleCustomEvent);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
     };
-  }, [pathname]); // Re-run when pathname changes (navigation)
+  }, []);
 
   // Load available brands from localStorage
   useEffect(() => {
