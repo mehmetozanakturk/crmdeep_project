@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -183,6 +184,7 @@ const DEMO_PROJECTS: Project[] = [
 ];
 
 export default function ProjectsPage() {
+  const pathname = usePathname();
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('created_at');
@@ -194,13 +196,17 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
 
-  // Load from localStorage on mount
+  // Load from localStorage - reload when pathname changes (on navigation)
   useEffect(() => {
     const loadProjects = () => {
+      console.log('[Projects] Loading projects from localStorage...');
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setProjects(JSON.parse(stored));
+        const parsedProjects = JSON.parse(stored);
+        console.log('[Projects] Loaded projects:', parsedProjects.length);
+        setProjects(parsedProjects);
       } else {
+        console.log('[Projects] No stored projects, using demo data');
         setProjects(DEMO_PROJECTS);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_PROJECTS));
       }
@@ -210,6 +216,7 @@ export default function ProjectsPage() {
 
     // Listen for storage changes (when projects are added from other components)
     const handleStorageChange = (e: StorageEvent) => {
+      console.log('[Projects] Storage event received:', e.key);
       if (e.key === STORAGE_KEY) {
         loadProjects();
       }
@@ -217,11 +224,13 @@ export default function ProjectsPage() {
 
     // Listen for custom event (for same-window updates)
     const handleCustomEvent = () => {
+      console.log('[Projects] projectsUpdated event received!');
       loadProjects();
     };
 
     // Listen for visibility change (when user switches back to this page)
     const handleVisibilityChange = () => {
+      console.log('[Projects] Visibility changed, hidden:', document.hidden);
       if (!document.hidden) {
         loadProjects();
       }
@@ -229,21 +238,24 @@ export default function ProjectsPage() {
 
     // Listen for window focus (when user comes back to this tab/window)
     const handleFocus = () => {
+      console.log('[Projects] Window focused!');
       loadProjects();
     };
 
+    console.log('[Projects] Setting up event listeners...');
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('projectsUpdated', handleCustomEvent);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
 
     return () => {
+      console.log('[Projects] Cleaning up event listeners...');
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('projectsUpdated', handleCustomEvent);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, []);
+  }, [pathname]); // Re-run when pathname changes (navigation)
 
   // Load available brands from localStorage
   useEffect(() => {
