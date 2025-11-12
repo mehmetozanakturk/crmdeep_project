@@ -56,6 +56,7 @@ export interface Task {
   assignee: { name: string; initials: string; color: string };
   dueDate: string;
   project: string;
+  projectId?: string; // Link to project
   tags: string[];
   attachments: number;
   comments: number;
@@ -292,6 +293,8 @@ export default function TasksPage() {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortBy>('dueDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [groupBy, setGroupBy] = useState<string>('none');
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -416,6 +419,15 @@ export default function TasksPage() {
   const getFilteredTasks = () => {
     let filtered = tasks;
 
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(t =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.project.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
     // Apply date filter
     filtered = filterByDate(filtered);
 
@@ -433,6 +445,43 @@ export default function TasksPage() {
     filtered = sortTasks(filtered);
 
     return filtered;
+  };
+
+  // Group tasks
+  const getGroupedTasks = () => {
+    const filtered = getFilteredTasks();
+
+    if (groupBy === 'none') {
+      return { 'Tüm Görevler': filtered };
+    }
+
+    const grouped: Record<string, Task[]> = {};
+
+    filtered.forEach((task) => {
+      let groupKey = '';
+
+      switch (groupBy) {
+        case 'project':
+          groupKey = task.project || 'Projesiz';
+          break;
+        case 'priority':
+          groupKey = task.priority === 'high' ? 'Yüksek Öncelik' :
+                     task.priority === 'medium' ? 'Orta Öncelik' : 'Düşük Öncelik';
+          break;
+        case 'assignee':
+          groupKey = task.assignee.name;
+          break;
+        default:
+          groupKey = 'Tüm Görevler';
+      }
+
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = [];
+      }
+      grouped[groupKey].push(task);
+    });
+
+    return grouped;
   };
 
   const getTasksByStatus = (status: Task['status']) => {
@@ -578,6 +627,30 @@ export default function TasksPage() {
               {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
             </Button>
           </div>
+
+          {/* Group By */}
+          <Select value={groupBy} onValueChange={setGroupBy}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Gruplama" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Grupla</SelectItem>
+              <SelectItem value="project">Projeye Göre</SelectItem>
+              <SelectItem value="priority">Önceliğe Göre</SelectItem>
+              <SelectItem value="assignee">Kişiye Göre</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+          <Input
+            placeholder="Görevlerde ara..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
         </div>
       </div>
 

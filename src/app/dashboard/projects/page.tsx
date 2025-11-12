@@ -53,6 +53,7 @@ export interface Project {
   tasksTotal: number;
   tasksCompleted: number;
   brand: string;
+  brandId?: string; // Link to brand
   priority: 'low' | 'medium' | 'high';
   created_at: string;
   updated_at: string;
