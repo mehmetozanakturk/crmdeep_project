@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Inbox as InboxIcon, Mail, Star, Archive, Trash2, Search, Send, RefreshCw } from 'lucide-react';
+import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
 
 interface Email {
   id: string;
@@ -26,21 +27,32 @@ const DEMO_EMAILS: Email[] = [
   { id: '4', from: 'Zeynep Arslan', subject: 'Demo talebi', preview: 'Ürününüzün demosunu görmek istiyoruz...', time: 'Dün', unread: false, starred: true, company: 'GlobalSoft' },
 ];
 
-const STORAGE_KEY = 'crmdeep_inbox';
-
 export default function InboxPage() {
   const [emails, setEmails] = useState<Email[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread' | 'starred'>('all');
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setEmails(JSON.parse(stored));
-    } else {
+    try {
+      const loadedEmails = initializeWorkspaceData<Email>('inbox', DEMO_EMAILS);
+      setEmails(loadedEmails);
+    } catch (error) {
+      console.error('Error loading emails:', error);
       setEmails(DEMO_EMAILS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_EMAILS));
     }
+
+    // Listen for workspace changes
+    const handleWorkspaceChange = () => {
+      try {
+        const loadedEmails = getWorkspaceData<Email>('inbox', DEMO_EMAILS);
+        setEmails(loadedEmails);
+      } catch (error) {
+        console.error('Error loading emails after workspace change:', error);
+      }
+    };
+
+    window.addEventListener('workspaceChanged', handleWorkspaceChange);
+    return () => window.removeEventListener('workspaceChanged', handleWorkspaceChange);
   }, []);
 
   const filteredEmails = emails.filter(email => {

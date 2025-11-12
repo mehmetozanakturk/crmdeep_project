@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, TrendingUp, TrendingDown, DollarSign, Eye, MousePointer, Target, BarChart3, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
 import {
   Select,
   SelectContent,
@@ -83,8 +84,6 @@ const DEMO_CAMPAIGNS: Campaign[] = [
   },
 ];
 
-const STORAGE_KEY = 'crmdeep_campaigns';
-
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,13 +91,26 @@ export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setCampaigns(JSON.parse(stored));
-    } else {
+    try {
+      const loadedCampaigns = initializeWorkspaceData<Campaign>('campaigns', DEMO_CAMPAIGNS);
+      setCampaigns(loadedCampaigns);
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
       setCampaigns(DEMO_CAMPAIGNS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_CAMPAIGNS));
     }
+
+    // Listen for workspace changes
+    const handleWorkspaceChange = () => {
+      try {
+        const loadedCampaigns = getWorkspaceData<Campaign>('campaigns', DEMO_CAMPAIGNS);
+        setCampaigns(loadedCampaigns);
+      } catch (error) {
+        console.error('Error loading campaigns after workspace change:', error);
+      }
+    };
+
+    window.addEventListener('workspaceChanged', handleWorkspaceChange);
+    return () => window.removeEventListener('workspaceChanged', handleWorkspaceChange);
   }, []);
 
   const filteredCampaigns = campaigns.filter(campaign => {

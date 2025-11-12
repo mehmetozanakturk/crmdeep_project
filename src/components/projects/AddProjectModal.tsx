@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { getWorkspaceData, setWorkspaceData } from '@/lib/workspace-storage';
 import {
   Dialog,
   DialogContent,
@@ -112,11 +113,10 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
         updated_at: new Date().toISOString(),
       };
 
-      // Save to localStorage
-      const stored = localStorage.getItem('crmdeep_projects');
-      const projects = stored ? JSON.parse(stored) : [];
+      // Save to workspace-scoped localStorage
+      const projects = getWorkspaceData('projects', []);
       projects.unshift(newProject);
-      localStorage.setItem('crmdeep_projects', JSON.stringify(projects));
+      setWorkspaceData('projects', projects);
 
       // Dispatch custom event to notify other components
       window.dispatchEvent(new Event('projectsUpdated'));

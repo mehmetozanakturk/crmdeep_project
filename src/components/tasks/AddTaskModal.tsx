@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { getWorkspaceData, setWorkspaceData } from '@/lib/workspace-storage';
 import {
   Dialog,
   DialogContent,
@@ -101,11 +102,10 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded, defaultProject }
         updated_at: new Date().toISOString(),
       };
 
-      // Save to localStorage
-      const stored = localStorage.getItem('crmdeep_tasks');
-      const tasks = stored ? JSON.parse(stored) : [];
+      // Save to workspace-scoped localStorage
+      const tasks = getWorkspaceData('tasks', []);
       tasks.unshift(newTask);
-      localStorage.setItem('crmdeep_tasks', JSON.stringify(tasks));
+      setWorkspaceData('tasks', tasks);
 
       // Dispatch custom event to notify other components
       window.dispatchEvent(new Event('tasksUpdated'));

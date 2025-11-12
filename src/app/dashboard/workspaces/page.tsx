@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Briefcase, Search, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Plus, Briefcase, Search, Edit, Trash2, MoreVertical, Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ interface Workspace {
 }
 
 export default function WorkspacesPage() {
+  const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>('');
@@ -81,10 +83,16 @@ export default function WorkspacesPage() {
             Markalarınızı ve workspace ayarlarını yönetin
           </p>
         </div>
-        <Button onClick={() => alert('Workspace ekleme modali yakında!')}>
-          <Plus className="mr-2 h-4 w-4" />
-          Yeni Workspace
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => router.push('/dashboard/workspaces/settings')}>
+            <Settings className="mr-2 h-4 w-4" />
+            Ayarlar
+          </Button>
+          <Button onClick={() => alert('Workspace ekleme modali yakında!')}>
+            <Plus className="mr-2 h-4 w-4" />
+            Yeni Workspace
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -139,6 +147,15 @@ export default function WorkspacesPage() {
                         <DropdownMenuItem onClick={() => switchWorkspace(workspace.id)}>
                           <Briefcase className="mr-2 h-4 w-4" />
                           Workspace'e Geç
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    {workspace.id === activeWorkspaceId && (
+                      <>
+                        <DropdownMenuItem onClick={() => router.push('/dashboard/workspaces/settings')}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          Ayarlar
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                       </>

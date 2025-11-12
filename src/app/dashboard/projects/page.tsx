@@ -41,6 +41,7 @@ import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
 import { ProjectDetailModal } from '@/components/projects/ProjectDetailModal';
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
+import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
 
 export interface Project {
   id: string;
@@ -59,8 +60,6 @@ export interface Project {
   created_at: string;
   updated_at: string;
 }
-
-const STORAGE_KEY = 'crmdeep_projects';
 
 const DEMO_PROJECTS: Project[] = [
   {
@@ -194,46 +193,48 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
 
-  // Load from localStorage on mount
+  // Load from workspace-scoped localStorage on mount
   useEffect(() => {
     const loadProjects = () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setProjects(JSON.parse(stored));
-      } else {
+      try {
+        const loadedProjects = initializeWorkspaceData<Project>('projects', DEMO_PROJECTS);
+        setProjects(loadedProjects);
+      } catch (error) {
+        console.error('Error loading projects:', error);
         setProjects(DEMO_PROJECTS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_PROJECTS));
       }
     };
 
     loadProjects();
 
-    // Listen for custom event
+    // Listen for custom events
     const handleCustomEvent = () => {
       loadProjects();
     };
 
     window.addEventListener('projectsUpdated', handleCustomEvent);
+    window.addEventListener('workspaceChanged', handleCustomEvent);
 
     return () => {
       window.removeEventListener('projectsUpdated', handleCustomEvent);
+      window.removeEventListener('workspaceChanged', handleCustomEvent);
     };
   }, []);
 
-  // Load available brands from localStorage
+  // Load available workspaces (brands) from localStorage
   useEffect(() => {
-    const storedBrands = localStorage.getItem('crmdeep_brands');
-    if (storedBrands) {
-      const brands = JSON.parse(storedBrands);
-      const brandNames = brands.map((b: any) => b.name);
-      setAvailableBrands(brandNames);
+    const storedWorkspaces = localStorage.getItem('crmdeep_workspaces');
+    if (storedWorkspaces) {
+      const workspaces = JSON.parse(storedWorkspaces);
+      const workspaceNames = workspaces.map((w: any) => w.name);
+      setAvailableBrands(workspaceNames);
     }
-  }, [projects]); // Re-fetch when projects change (in case new brands were added)
+  }, [projects]); // Re-fetch when projects change (in case new workspaces were added)
 
-  // Save to localStorage whenever projects change
+  // Save to workspace-scoped localStorage whenever projects change
   useEffect(() => {
     if (projects.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+      setWorkspaceData('projects', projects);
     }
   }, [projects]);
 

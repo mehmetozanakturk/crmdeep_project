@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/select';
 import { sortCompanies, SORT_OPTIONS, type SortOption } from '@/lib/utils/sorting';
 import { groupCompanies, GROUP_OPTIONS, type CompanyGroupOption } from '@/lib/utils/grouping';
+import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
 
 interface Project {
   id: string;
@@ -282,8 +283,6 @@ const DEMO_COMPANIES: Company[] = [
   },
 ];
 
-const STORAGE_KEY = 'crmdeep_companies';
-
 export default function CompaniesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -295,11 +294,10 @@ export default function CompaniesPage() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
 
-  // Load companies from localStorage
+  // Load companies from workspace-scoped localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const loadedCompanies = JSON.parse(stored);
+    try {
+      const loadedCompanies = initializeWorkspaceData<Company>('companies', DEMO_COMPANIES);
       // Migrate old data to include new fields
       const migratedCompanies = loadedCompanies.map((company: any) => ({
         ...company,
@@ -314,16 +312,16 @@ export default function CompaniesPage() {
         description: company.description || undefined,
       }));
       setCompanies(migratedCompanies);
-    } else {
+    } catch (error) {
+      console.error('Error loading companies:', error);
       setCompanies(DEMO_COMPANIES);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_COMPANIES));
     }
   }, []);
 
-  // Save to localStorage whenever companies change
+  // Save to workspace-scoped localStorage whenever companies change
   useEffect(() => {
     if (companies.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
+      setWorkspaceData('companies', companies);
     }
   }, [companies]);
 

@@ -48,6 +48,7 @@ import {
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
+import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
 
 export interface Task {
   id: string;
@@ -70,8 +71,6 @@ export interface Task {
 type ViewMode = 'board' | 'list' | 'timeline';
 type DateFilter = 'all' | 'today' | 'week' | 'month' | 'overdue';
 type SortBy = 'dueDate' | 'priority' | 'created' | 'title';
-
-const STORAGE_KEY = 'crmdeep_tasks';
 
 const DEMO_TASKS: Task[] = [
   {
@@ -299,40 +298,43 @@ export default function TasksPage() {
   const [groupBy, setGroupBy] = useState<string>('none');
   const [availableProjects, setAvailableProjects] = useState<string[]>([]);
 
-  // Load from localStorage on mount
+  // Load from workspace-scoped localStorage on mount
   useEffect(() => {
     const loadTasks = () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setTasks(JSON.parse(stored));
-      } else {
+      try {
+        const loadedTasks = initializeWorkspaceData<Task>('tasks', DEMO_TASKS);
+        setTasks(loadedTasks);
+      } catch (error) {
+        console.error('Error loading tasks:', error);
         setTasks(DEMO_TASKS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_TASKS));
       }
     };
 
     loadTasks();
 
-    // Listen for custom event (for same-window updates)
+    // Listen for custom events
     const handleCustomEvent = () => {
       loadTasks();
     };
 
     window.addEventListener('tasksUpdated', handleCustomEvent);
+    window.addEventListener('workspaceChanged', handleCustomEvent);
 
     return () => {
       window.removeEventListener('tasksUpdated', handleCustomEvent);
+      window.removeEventListener('workspaceChanged', handleCustomEvent);
     };
   }, []);
 
-  // Load available projects from localStorage
+  // Load available projects from workspace-scoped localStorage
   useEffect(() => {
     const loadProjects = () => {
-      const storedProjects = localStorage.getItem('crmdeep_projects');
-      if (storedProjects) {
-        const projects = JSON.parse(storedProjects);
+      try {
+        const projects = getWorkspaceData('projects', []);
         const projectNames = projects.map((p: any) => p.name);
         setAvailableProjects(projectNames);
+      } catch (error) {
+        console.error('Error loading projects:', error);
       }
     };
 
@@ -344,16 +346,18 @@ export default function TasksPage() {
     };
 
     window.addEventListener('projectsUpdated', handleProjectsUpdate);
+    window.addEventListener('workspaceChanged', handleProjectsUpdate);
 
     return () => {
       window.removeEventListener('projectsUpdated', handleProjectsUpdate);
+      window.removeEventListener('workspaceChanged', handleProjectsUpdate);
     };
   }, [tasks]); // Re-fetch when tasks change (in case new projects were added)
 
-  // Save to localStorage whenever tasks change
+  // Save to workspace-scoped localStorage whenever tasks change
   useEffect(() => {
     if (tasks.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      setWorkspaceData('tasks', tasks);
     }
   }, [tasks]);
 
