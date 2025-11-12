@@ -30,22 +30,12 @@ import {
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 import { AddNoteModal } from '@/components/notes/AddNoteModal';
 import { AddEventModal } from '@/components/calendar/AddEventModal';
-import { AddProjectModal } from '@/components/companies/AddProjectModal';
+import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import type { Task } from '@/app/dashboard/tasks/page';
 import type { Note } from '@/app/dashboard/notes/page';
 import type { CalendarEvent } from '@/components/calendar/AddEventModal';
+import type { Project } from '@/app/dashboard/projects/page';
 import { addRelationship, addProjectToCompany, getRelatedItems } from '@/lib/utils/relationships';
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: 'planned' | 'in_progress' | 'completed' | 'on_hold';
-  start_date: string;
-  end_date?: string;
-  budget?: string;
-  progress: number;
-}
 
 interface Company {
   id: string;
@@ -85,15 +75,7 @@ interface CompanyDetailModalProps {
 
 const getProjectStatusInfo = (status: Project['status']) => {
   switch (status) {
-    case 'planned':
-      return {
-        label: 'Planlandı',
-        icon: ListTodo,
-        color: 'text-blue-600 dark:text-blue-400',
-        bgColor: 'bg-blue-50 dark:bg-blue-500/10',
-        borderColor: 'border-blue-200 dark:border-blue-500/20',
-      };
-    case 'in_progress':
+    case 'active':
       return {
         label: 'Devam Ediyor',
         icon: Clock,
@@ -109,13 +91,21 @@ const getProjectStatusInfo = (status: Project['status']) => {
         bgColor: 'bg-green-50 dark:bg-green-500/10',
         borderColor: 'border-green-200 dark:border-green-500/20',
       };
-    case 'on_hold':
+    case 'on-hold':
       return {
         label: 'Beklemede',
         icon: PauseCircle,
         color: 'text-neutral-600 dark:text-neutral-400',
         bgColor: 'bg-neutral-50 dark:bg-neutral-500/10',
         borderColor: 'border-neutral-200 dark:border-neutral-500/20',
+      };
+    case 'at-risk':
+      return {
+        label: 'Risk Altında',
+        icon: AlertCircle,
+        color: 'text-red-600 dark:text-red-400',
+        bgColor: 'bg-red-50 dark:bg-red-500/10',
+        borderColor: 'border-red-200 dark:border-red-500/20',
       };
   }
 };
@@ -462,7 +452,7 @@ export function CompanyDetailModal({
                           <div className="flex items-center gap-2">
                             <StatusIcon className={`h-4 w-4 ${statusInfo.color}`} />
                             <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
-                              {project.title}
+                              {project.name}
                             </h4>
                             <Badge variant="outline" className="text-xs">
                               {statusInfo.label}
@@ -473,30 +463,26 @@ export function CompanyDetailModal({
                           </p>
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">
                             <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                              <span className="font-medium">Başlangıç:</span> {formatDate(project.start_date)}
+                              <span className="font-medium">Başlangıç:</span> {formatDate(project.startDate)}
                             </div>
-                            {project.end_date && (
+                            {project.endDate && (
                               <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                                <span className="font-medium">Bitiş:</span> {formatDate(project.end_date)}
+                                <span className="font-medium">Bitiş:</span> {formatDate(project.endDate)}
                               </div>
                             )}
-                            {project.budget && (
-                              <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                                <span className="font-medium">Bütçe:</span> {project.budget}
-                              </div>
-                            )}
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                              <span className="font-medium">Görevler:</span> {project.tasksCompleted}/{project.tasksTotal}
+                            </div>
                           </div>
-                          {project.status !== 'planned' && (
-                            <div className="mt-3">
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-neutral-600 dark:text-neutral-400">İlerleme</span>
-                                <span className={`font-semibold ${statusInfo.color}`}>
-                                  %{project.progress}
-                                </span>
-                              </div>
-                              <Progress value={project.progress} className="h-2" />
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-neutral-600 dark:text-neutral-400">İlerleme</span>
+                              <span className={`font-semibold ${statusInfo.color}`}>
+                                %{project.progress}
+                              </span>
                             </div>
-                          )}
+                            <Progress value={project.progress} className="h-2" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -616,7 +602,7 @@ export function CompanyDetailModal({
         open={isAddProjectModalOpen}
         onOpenChange={setIsAddProjectModalOpen}
         onProjectAdded={handleProjectAdded}
-        companyName={company.name}
+        defaultBrand={company.name}
       />
     </Dialog>
   );
