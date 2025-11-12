@@ -151,15 +151,6 @@ export const CRM_MODULES: CRMModule[] = [
   // SALES MODULES
   // ============================================================================
   {
-    key: 'brands',
-    name: 'Markalar',
-    description: 'Marka yönetimi ve takibi',
-    icon: Briefcase,
-    category: 'sales',
-    href: '/dashboard/brands',
-    defaultPinned: true,
-  },
-  {
     key: 'leads',
     name: 'Potansiyel Müşteriler',
     description: 'Lead yönetimi ve takibi',
@@ -296,6 +287,16 @@ export const CRM_MODULES: CRMModule[] = [
   // ============================================================================
   // COMPANY MODULES
   // ============================================================================
+  {
+    key: 'workspaces',
+    name: 'Workspace Yönetimi',
+    description: 'Markalarınızı ve workspace ayarlarını yönetin',
+    icon: Briefcase,
+    category: 'company',
+    href: '/dashboard/workspaces',
+    defaultPinned: false,
+    requiredRole: 'admin',
+  },
   {
     key: 'inbox',
     name: 'Birleşik Gelen Kutusu',
