@@ -29,6 +29,7 @@ import {
   X,
   ArrowUpDown,
   Layers,
+  Loader2,
 } from 'lucide-react';
 import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
 import { EditCompanyModal } from '@/components/companies/EditCompanyModal';
@@ -42,7 +43,8 @@ import {
 } from '@/components/ui/select';
 import { sortCompanies, SORT_OPTIONS, type SortOption } from '@/lib/utils/sorting';
 import { groupCompanies, GROUP_OPTIONS, type CompanyGroupOption } from '@/lib/utils/grouping';
-import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
+import { getActiveWorkspaceId } from '@/lib/workspace-storage';
+import * as CompaniesAPI from '@/lib/api/companies';
 
 interface Project {
   id: string;
@@ -293,37 +295,42 @@ export default function CompaniesPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load companies from workspace-scoped localStorage
+  // Load companies from Supabase
   useEffect(() => {
-    try {
-      const loadedCompanies = initializeWorkspaceData<Company>('companies', DEMO_COMPANIES);
-      // Migrate old data to include new fields
-      const migratedCompanies = loadedCompanies.map((company: any) => ({
-        ...company,
-        projects: company.projects || [],
-        agreement_date: company.agreement_date || undefined,
-        priority: company.priority || 'medium',
-        relatedTasks: company.relatedTasks || [],
-        relatedNotes: company.relatedNotes || [],
-        relatedEvents: company.relatedEvents || [],
-        last_activity_date: company.last_activity_date || company.updated_at,
-        total_revenue: company.total_revenue || undefined,
-        description: company.description || undefined,
-      }));
-      setCompanies(migratedCompanies);
-    } catch (error) {
-      console.error('Error loading companies:', error);
-      setCompanies(DEMO_COMPANIES);
-    }
+    loadCompaniesData();
   }, []);
 
-  // Save to workspace-scoped localStorage whenever companies change
-  useEffect(() => {
-    if (companies.length > 0) {
-      setWorkspaceData('companies', companies);
+  const loadCompaniesData = async () => {
+    try {
+      setLoading(true);
+      const workspaceId = getActiveWorkspaceId();
+      if (!workspaceId) {
+        console.warn('No active workspace');
+        setLoading(false);
+        return;
+      }
+
+      const data = await CompaniesAPI.loadCompanies(workspaceId);
+      // Add temporary frontend-only fields for compatibility
+      const enrichedData = data.map((company: any) => ({
+        ...company,
+        projects: [], // Will be loaded from projects table later
+        agreement_date: undefined,
+        relatedTasks: [],
+        relatedNotes: [],
+        relatedEvents: [],
+        last_activity_date: company.updated_at,
+        total_revenue: undefined,
+      }));
+      setCompanies(enrichedData);
+    } catch (error) {
+      console.error('Error loading companies:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [companies]);
+  };
 
   // Filtreleme
   let filteredCompanies = companies.filter((company) => {
@@ -343,27 +350,22 @@ export default function CompaniesPage() {
   // Gruplama
   const groupedCompanies = groupCompanies(filteredCompanies, groupBy);
 
-  const handleCompanyAdded = (newCompany: Company) => {
-    // Add default values for new fields if missing
-    const companyWithDefaults: Company = {
-      ...newCompany,
-      projects: newCompany.projects || [],
-      priority: newCompany.priority || 'medium',
-      relatedTasks: newCompany.relatedTasks || [],
-      relatedNotes: newCompany.relatedNotes || [],
-      relatedEvents: newCompany.relatedEvents || [],
-      last_activity_date: newCompany.last_activity_date || newCompany.created_at,
-    };
-    setCompanies([companyWithDefaults, ...companies]);
+  const handleCompanyAdded = async (newCompany: Company) => {
+    // Reload data from Supabase to get the latest
+    await loadCompaniesData();
   };
 
-  const handleCompanyUpdated = (updatedCompany: Company) => {
-    setCompanies(companies.map(c => c.id === updatedCompany.id ? updatedCompany : c));
+  const handleCompanyUpdated = async (updatedCompany: Company) => {
+    // Reload data from Supabase to get the latest
+    await loadCompaniesData();
   };
 
-  const handleDeleteCompany = (companyId: string) => {
+  const handleDeleteCompany = async (companyId: string) => {
     if (confirm('Bu firmayı silmek istediğinizden emin misiniz?')) {
-      setCompanies(companies.filter(c => c.id !== companyId));
+      const success = await CompaniesAPI.deleteCompany(companyId);
+      if (success) {
+        await loadCompaniesData();
+      }
     }
   };
 
@@ -519,7 +521,16 @@ export default function CompaniesPage() {
       </Card>
 
       {/* Companies Grid */}
-      {filteredCompanies.length === 0 ? (
+      {loading ? (
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardContent className="py-12 text-center">
+            <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary-600 dark:text-primary-400" />
+            <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              Firmalar yükleniyor...
+            </h3>
+          </CardContent>
+        </Card>
+      ) : filteredCompanies.length === 0 ? (
         <Card className="border-neutral-200 dark:border-neutral-700">
           <CardContent className="py-12 text-center">
             <Building2 className="mx-auto h-12 w-12 text-neutral-400 dark:text-neutral-500" />

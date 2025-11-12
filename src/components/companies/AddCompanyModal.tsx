@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { TagSelector } from '@/components/ui/tag-selector';
+import { getActiveWorkspaceId } from '@/lib/workspace-storage';
+import * as CompaniesAPI from '@/lib/api/companies';
 
 const companySchema = z.object({
   name: z.string().min(2, 'Firma adı en az 2 karakter olmalı'),
@@ -93,8 +95,13 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
     setIsSubmitting(true);
 
     try {
-      const newCompany: Company = {
-        id: Date.now().toString(),
+      const workspaceId = getActiveWorkspaceId();
+      if (!workspaceId) {
+        alert('Lütfen bir workspace seçin');
+        return;
+      }
+
+      const companyData: CompaniesAPI.CreateCompanyInput = {
         name: data.name,
         industry: data.industry,
         size: data.size,
@@ -106,26 +113,34 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
         contacts: 0,
         deals: 0,
         status: 'active',
-        tags: selectedTags,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        projects: [],
-        agreement_date: new Date().toISOString(),
         priority: 'medium',
-        relatedTasks: [],
-        relatedNotes: [],
-        relatedEvents: [],
-        last_activity_date: new Date().toISOString(),
-        total_revenue: undefined,
-        description: undefined,
+        tags: selectedTags,
       };
 
-      onCompanyAdded(newCompany);
-      reset();
-      setSelectedTags([]);
-      onOpenChange(false);
+      const newCompany = await CompaniesAPI.createCompany(workspaceId, companyData);
+
+      if (newCompany) {
+        // Add temporary frontend fields for compatibility
+        const enrichedCompany: Company = {
+          ...newCompany,
+          projects: [],
+          agreement_date: undefined,
+          relatedTasks: [],
+          relatedNotes: [],
+          relatedEvents: [],
+          last_activity_date: newCompany.updated_at,
+          total_revenue: undefined,
+        };
+        onCompanyAdded(enrichedCompany);
+        reset();
+        setSelectedTags([]);
+        onOpenChange(false);
+      } else {
+        alert('Firma eklenirken bir hata oluştu');
+      }
     } catch (error) {
       console.error('Error adding company:', error);
+      alert('Firma eklenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);
     }

@@ -2,22 +2,22 @@ import { createClient } from '@/lib/supabase/client';
 
 export interface Company {
   id: string;
-  organization_id: string;
+  workspace_id: string;
   name: string;
+  logo?: string;
   industry: string | null;
+  size: string | null;
+  revenue: string | null;
+  location: string | null;
   website: string | null;
   email: string | null;
   phone: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  country: string | null;
-  postal_code: string | null;
-  employee_count: string | null;
-  annual_revenue: string | null;
-  logo_url: string | null;
-  description: string | null;
+  contacts: number;
+  deals: number;
+  status: 'active' | 'prospect' | 'inactive';
+  priority: 'low' | 'medium' | 'high' | 'critical';
   tags: string[];
+  description: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -25,19 +25,20 @@ export interface Company {
 
 export interface CreateCompanyInput {
   name: string;
+  logo?: string;
   industry?: string;
+  size?: string;
+  revenue?: string;
+  location?: string;
   website?: string;
   email?: string;
   phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  postal_code?: string;
-  employee_count?: string;
-  annual_revenue?: string;
-  description?: string;
+  contacts?: number;
+  deals?: number;
+  status?: 'active' | 'prospect' | 'inactive';
+  priority?: 'low' | 'medium' | 'high' | 'critical';
   tags?: string[];
+  description?: string;
 }
 
 export interface UpdateCompanyInput extends Partial<CreateCompanyInput> {
@@ -45,15 +46,15 @@ export interface UpdateCompanyInput extends Partial<CreateCompanyInput> {
 }
 
 /**
- * Load all companies for an organization
+ * Load all companies for a workspace
  */
-export async function loadCompanies(organizationId: string): Promise<Company[]> {
+export async function loadCompanies(workspaceId: string): Promise<Company[]> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from('companies')
     .select('*')
-    .eq('organization_id', organizationId)
+    .eq('workspace_id', workspaceId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -88,7 +89,7 @@ export async function getCompany(id: string): Promise<Company | null> {
  * Create a new company
  */
 export async function createCompany(
-  organizationId: string,
+  workspaceId: string,
   input: CreateCompanyInput
 ): Promise<Company | null> {
   const supabase = createClient();
@@ -105,8 +106,12 @@ export async function createCompany(
   const { data, error } = await supabase
     .from('companies')
     .insert({
-      organization_id: organizationId,
+      workspace_id: workspaceId,
       ...input,
+      status: input.status || 'prospect',
+      priority: input.priority || 'medium',
+      contacts: input.contacts || 0,
+      deals: input.deals || 0,
       tags: input.tags || [],
       created_by: user.id,
     })
@@ -164,7 +169,7 @@ export async function deleteCompany(id: string): Promise<boolean> {
  * Search companies
  */
 export async function searchCompanies(
-  organizationId: string,
+  workspaceId: string,
   query: string
 ): Promise<Company[]> {
   const supabase = createClient();
@@ -172,8 +177,8 @@ export async function searchCompanies(
   const { data, error } = await supabase
     .from('companies')
     .select('*')
-    .eq('organization_id', organizationId)
-    .or(`name.ilike.%${query}%,industry.ilike.%${query}%,description.ilike.%${query}%`)
+    .eq('workspace_id', workspaceId)
+    .or(`name.ilike.%${query}%,industry.ilike.%${query}%,description.ilike.%${query}%,location.ilike.%${query}%`)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -182,4 +187,39 @@ export async function searchCompanies(
   }
 
   return data || [];
+}
+
+/**
+ * Get company statistics
+ */
+export async function getCompanyStats(workspaceId: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('companies')
+    .select('status, contacts, deals')
+    .eq('workspace_id', workspaceId);
+
+  if (error) {
+    console.error('Error loading company stats:', error);
+    return {
+      total: 0,
+      active: 0,
+      prospect: 0,
+      inactive: 0,
+      totalContacts: 0,
+      totalDeals: 0,
+    };
+  }
+
+  const stats = {
+    total: data.length,
+    active: data.filter(c => c.status === 'active').length,
+    prospect: data.filter(c => c.status === 'prospect').length,
+    inactive: data.filter(c => c.status === 'inactive').length,
+    totalContacts: data.reduce((sum, c) => sum + (c.contacts || 0), 0),
+    totalDeals: data.reduce((sum, c) => sum + (c.deals || 0), 0),
+  };
+
+  return stats;
 }

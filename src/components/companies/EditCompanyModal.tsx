@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { TagSelector } from '@/components/ui/tag-selector';
+import * as CompaniesAPI from '@/lib/api/companies';
 
 const companySchema = z.object({
   name: z.string().min(2, 'Firma adı en az 2 karakter olmalı'),
@@ -134,8 +135,8 @@ export function EditCompanyModal({ open, onOpenChange, company, onCompanyUpdated
     setIsSubmitting(true);
 
     try {
-      const updatedCompany: Company = {
-        ...company,
+      const updateData: CompaniesAPI.UpdateCompanyInput = {
+        id: company.id,
         name: data.name,
         industry: data.industry,
         size: data.size,
@@ -146,13 +147,30 @@ export function EditCompanyModal({ open, onOpenChange, company, onCompanyUpdated
         phone: data.phone || '',
         status: data.status as Company['status'],
         tags: selectedTags,
-        updated_at: new Date().toISOString(),
       };
 
-      onCompanyUpdated(updatedCompany);
-      onOpenChange(false);
+      const result = await CompaniesAPI.updateCompany(updateData);
+
+      if (result) {
+        // Add temporary frontend fields for compatibility
+        const enrichedCompany: Company = {
+          ...result,
+          projects: company.projects || [],
+          agreement_date: company.agreement_date,
+          relatedTasks: company.relatedTasks || [],
+          relatedNotes: company.relatedNotes || [],
+          relatedEvents: company.relatedEvents || [],
+          last_activity_date: result.updated_at,
+          total_revenue: company.total_revenue,
+        };
+        onCompanyUpdated(enrichedCompany);
+        onOpenChange(false);
+      } else {
+        alert('Firma güncellenirken bir hata oluştu');
+      }
     } catch (error) {
       console.error('Error updating company:', error);
+      alert('Firma güncellenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);
     }
