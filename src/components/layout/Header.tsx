@@ -1,7 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Bell, Search, Sun, Moon, Menu } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Menu, Building2, ChevronDown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,14 +15,66 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useTheme } from '@/components/theme-provider';
 
 interface HeaderProps {
   onMobileSidebarToggle: () => void;
 }
 
+interface Workspace {
+  id: string;
+  name: string;
+  domain: string;
+  color: string;
+}
+
 export function Header({ onMobileSidebarToggle }: HeaderProps) {
   const { theme, setTheme } = useTheme();
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspace, setActiveWorkspace] = useState<string>('');
+
+  // Load workspaces from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('crmdeep_workspaces');
+    if (stored) {
+      const ws = JSON.parse(stored);
+      setWorkspaces(ws);
+    } else {
+      // Default workspaces
+      const defaultWorkspaces: Workspace[] = [
+        { id: '1', name: 'RendxAI', domain: 'rendxai.com', color: '#3B82F6' },
+        { id: '2', name: 'AllMediaI', domain: 'allmediai.com', color: '#10B981' },
+        { id: '3', name: 'AutoMexus', domain: 'automexus.com', color: '#8B5CF6' },
+      ];
+      setWorkspaces(defaultWorkspaces);
+      localStorage.setItem('crmdeep_workspaces', JSON.stringify(defaultWorkspaces));
+    }
+
+    // Load active workspace
+    const active = localStorage.getItem('crmdeep_active_workspace');
+    if (active) {
+      setActiveWorkspace(active);
+    } else {
+      setActiveWorkspace('1'); // Default to first workspace
+      localStorage.setItem('crmdeep_active_workspace', '1');
+    }
+  }, []);
+
+  const handleWorkspaceChange = (workspaceId: string) => {
+    setActiveWorkspace(workspaceId);
+    localStorage.setItem('crmdeep_active_workspace', workspaceId);
+    // Trigger global event for other components to reload
+    window.dispatchEvent(new Event('workspaceChanged'));
+    // Reload page to refresh all data
+    window.location.reload();
+  };
 
   // TODO: Replace with real user data from Supabase
   const user = {
@@ -39,6 +92,8 @@ export function Header({ onMobileSidebarToggle }: HeaderProps) {
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  const currentWorkspace = workspaces.find(w => w.id === activeWorkspace);
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
@@ -58,6 +113,48 @@ export function Header({ onMobileSidebarToggle }: HeaderProps) {
           <Link href="/dashboard" className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">CRMDeep</h1>
           </Link>
+
+          {/* Workspace Switcher */}
+          {currentWorkspace && (
+            <div className="hidden lg:block">
+              <Select value={activeWorkspace} onValueChange={handleWorkspaceChange}>
+                <SelectTrigger className="w-[200px] h-9 border-neutral-300 dark:border-neutral-600">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: currentWorkspace.color }}
+                    />
+                    <div className="flex flex-col items-start">
+                      <span className="text-xs font-semibold">{currentWorkspace.name}</span>
+                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{currentWorkspace.domain}</span>
+                    </div>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((workspace) => (
+                    <SelectItem key={workspace.id} value={workspace.id}>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: workspace.color }}
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-medium">{workspace.name}</span>
+                          <span className="text-xs text-neutral-500">{workspace.domain}</span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <SelectItem value="manage" disabled>
+                    <Link href="/dashboard/workspaces" className="text-primary-600 dark:text-primary-400">
+                      ⚙️ Manage Workspaces
+                    </Link>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Search Bar */}
           <div className="relative hidden md:block">
