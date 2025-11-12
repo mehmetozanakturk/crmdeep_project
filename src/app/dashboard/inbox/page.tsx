@@ -6,8 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { Inbox as InboxIcon, Mail, Star, Archive, Trash2, Search, Send, RefreshCw } from 'lucide-react';
-import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
+import { Inbox as InboxIcon, Mail, Star, Archive, Trash2, Search, Send, RefreshCw, Loader2 } from 'lucide-react';
+import { getActiveWorkspaceId } from '@/lib/workspace-storage';
+import * as EmailsAPI from '@/lib/api/emails';
 
 interface Email {
   id: string;
@@ -31,29 +32,48 @@ export default function InboxPage() {
   const [emails, setEmails] = useState<Email[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread' | 'starred'>('all');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const loadedEmails = initializeWorkspaceData<Email>('inbox', DEMO_EMAILS);
-      setEmails(loadedEmails);
-    } catch (error) {
-      console.error('Error loading emails:', error);
-      setEmails(DEMO_EMAILS);
-    }
+    loadEmailsData();
 
-    // Listen for workspace changes
     const handleWorkspaceChange = () => {
-      try {
-        const loadedEmails = getWorkspaceData<Email>('inbox', DEMO_EMAILS);
-        setEmails(loadedEmails);
-      } catch (error) {
-        console.error('Error loading emails after workspace change:', error);
-      }
+      loadEmailsData();
     };
 
     window.addEventListener('workspaceChanged', handleWorkspaceChange);
     return () => window.removeEventListener('workspaceChanged', handleWorkspaceChange);
   }, []);
+
+  const loadEmailsData = async () => {
+    try {
+      setLoading(true);
+      const workspaceId = getActiveWorkspaceId();
+      if (!workspaceId) {
+        console.warn('No active workspace');
+        setLoading(false);
+        return;
+      }
+
+      const data = await EmailsAPI.loadEmails(workspaceId);
+      // Map to frontend format
+      const mappedData = data.map((email: any) => ({
+        id: email.id,
+        from: email.from_name || email.from_email,
+        subject: email.subject,
+        preview: email.body?.substring(0, 100) || '',
+        time: new Date(email.created_at).toLocaleDateString('tr-TR'),
+        unread: !email.is_read,
+        starred: email.is_starred,
+        company: email.company_id,
+      }));
+      setEmails(mappedData);
+    } catch (error) {
+      console.error('Error loading emails:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredEmails = emails.filter(email => {
     const matchesSearch =
@@ -67,6 +87,20 @@ export default function InboxPage() {
 
   const unreadCount = emails.filter(e => e.unread).length;
   const starredCount = emails.filter(e => e.starred).length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary-600 dark:text-primary-400" />
+          <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            E-postalar yükleniyor...
+          </h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -75,10 +109,10 @@ export default function InboxPage() {
             Gelen Kutusu
             {unreadCount > 0 && <Badge variant="destructive">{unreadCount}</Badge>}
           </h1>
-          <p className="mt-1 text-neutral-600 dark:text-neutral-400">Müşteri e-postalarını yönetin</p>
+          <p className="mt-1 text-neutral-600 dark:text-neutral-400">{emails.length} e-posta Supabase'den yüklendi</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline"><RefreshCw className="mr-2 h-4 w-4" />Yenile</Button>
+          <Button variant="outline" onClick={loadEmailsData}><RefreshCw className="mr-2 h-4 w-4" />Yenile</Button>
           <Button><Send className="mr-2 h-4 w-4" />Yeni E-posta</Button>
         </div>
       </div>
