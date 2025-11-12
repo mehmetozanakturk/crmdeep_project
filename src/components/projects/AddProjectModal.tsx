@@ -111,6 +111,13 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+
+      // Save to localStorage
+      const stored = localStorage.getItem('crmdeep_projects');
+      const projects = stored ? JSON.parse(stored) : [];
+      projects.unshift(newProject);
+      localStorage.setItem('crmdeep_projects', JSON.stringify(projects));
+
       onProjectAdded(newProject);
       reset();
       onOpenChange(false);

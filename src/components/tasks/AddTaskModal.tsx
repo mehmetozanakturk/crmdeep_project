@@ -100,6 +100,13 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded, defaultProject }
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+
+      // Save to localStorage
+      const stored = localStorage.getItem('crmdeep_tasks');
+      const tasks = stored ? JSON.parse(stored) : [];
+      tasks.unshift(newTask);
+      localStorage.setItem('crmdeep_tasks', JSON.stringify(tasks));
+
       onTaskAdded(newTask);
       reset();
       onOpenChange(false);
