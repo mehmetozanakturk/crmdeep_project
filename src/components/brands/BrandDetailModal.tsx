@@ -1,6 +1,8 @@
 'use client';
 
 import { type Brand } from '@/app/dashboard/brands/page';
+import { type Project } from '@/app/dashboard/projects/page';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import {
   Briefcase,
   Edit,
@@ -19,6 +22,11 @@ import {
   Target,
   Palette,
   BarChart3,
+  Plus,
+  FolderKanban,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 
 interface BrandDetailModalProps {
@@ -27,6 +35,7 @@ interface BrandDetailModalProps {
   brand: Brand;
   onEdit: (brand: Brand) => void;
   onDelete: (brandId: string) => void;
+  onAddProject?: () => void;
 }
 
 export function BrandDetailModal({
@@ -35,7 +44,21 @@ export function BrandDetailModal({
   brand,
   onEdit,
   onDelete,
+  onAddProject,
 }: BrandDetailModalProps) {
+  const [brandProjects, setBrandProjects] = useState<Project[]>([]);
+
+  // Load projects for this brand
+  useEffect(() => {
+    if (open) {
+      const stored = localStorage.getItem('crmdeep_projects');
+      if (stored) {
+        const allProjects: Project[] = JSON.parse(stored);
+        const filtered = allProjects.filter(project => project.brand === brand.name);
+        setBrandProjects(filtered);
+      }
+    }
+  }, [open, brand.name]);
   const getStatusBadge = (status: Brand['status']) => {
     switch (status) {
       case 'active':
@@ -215,6 +238,88 @@ export function BrandDetailModal({
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Brand Projects */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
+                <FolderKanban className="h-4 w-4" />
+                Marka Projeleri ({brandProjects.length})
+              </h3>
+              {onAddProject && (
+                <Button size="sm" onClick={() => {
+                  onAddProject();
+                  onOpenChange(false);
+                }}>
+                  <Plus className="h-3 w-3 mr-1" />
+                  Proje Ekle
+                </Button>
+              )}
+            </div>
+            {brandProjects.length > 0 ? (
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {brandProjects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      {project.status === 'completed' ? (
+                        <CheckCircle2 className="h-4 w-4 text-success-600 dark:text-success-400" />
+                      ) : project.status === 'active' ? (
+                        <Clock className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                      ) : project.status === 'at-risk' ? (
+                        <AlertCircle className="h-4 w-4 text-danger-600 dark:text-danger-400" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-warning-600 dark:text-warning-400" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                          {project.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 max-w-[120px]">
+                            <Progress value={project.progress} className="h-1.5" />
+                          </div>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            %{project.progress}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        project.priority === 'high'
+                          ? 'border-danger-200 dark:border-danger-700 text-danger-700 dark:text-danger-400'
+                          : project.priority === 'medium'
+                          ? 'border-warning-200 dark:border-warning-700 text-warning-700 dark:text-warning-400'
+                          : 'border-neutral-200 dark:border-neutral-700'
+                      }
+                    >
+                      {project.priority === 'high' ? 'Yüksek' : project.priority === 'medium' ? 'Orta' : 'Düşük'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 px-4 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+                <FolderKanban className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Bu markaya henüz proje eklenmemiş
+                </p>
+                {onAddProject && (
+                  <Button size="sm" variant="outline" className="mt-3" onClick={() => {
+                    onAddProject();
+                    onOpenChange(false);
+                  }}>
+                    <Plus className="h-3 w-3 mr-1" />
+                    İlk Projeyi Ekle
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
