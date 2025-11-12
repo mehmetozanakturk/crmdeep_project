@@ -220,12 +220,28 @@ export default function ProjectsPage() {
       loadProjects();
     };
 
+    // Listen for visibility change (when user switches back to this page)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadProjects();
+      }
+    };
+
+    // Listen for window focus (when user comes back to this tab/window)
+    const handleFocus = () => {
+      loadProjects();
+    };
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('projectsUpdated', handleCustomEvent);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('projectsUpdated', handleCustomEvent);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
