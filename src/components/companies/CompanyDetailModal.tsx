@@ -107,6 +107,14 @@ const getProjectStatusInfo = (status: Project['status']) => {
         bgColor: 'bg-red-50 dark:bg-red-500/10',
         borderColor: 'border-red-200 dark:border-red-500/20',
       };
+    default:
+      return {
+        label: 'Devam Ediyor',
+        icon: Clock,
+        color: 'text-orange-600 dark:text-orange-400',
+        bgColor: 'bg-orange-50 dark:bg-orange-500/10',
+        borderColor: 'border-orange-200 dark:border-orange-500/20',
+      };
   }
 };
 
