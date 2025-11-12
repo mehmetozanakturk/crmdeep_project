@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -45,9 +45,10 @@ interface AddProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onProjectAdded: (project: Project) => void;
+  defaultBrand?: string;
 }
 
-export function AddProjectModal({ open, onOpenChange, onProjectAdded }: AddProjectModalProps) {
+export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBrand }: AddProjectModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -63,11 +64,19 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded }: AddProje
       status: 'active',
       priority: 'medium',
       tasksCompleted: '0',
+      brand: defaultBrand || '',
     },
   });
 
   const statusValue = watch('status');
   const priorityValue = watch('priority');
+
+  // Set brand value when modal opens with defaultBrand
+  useEffect(() => {
+    if (open && defaultBrand) {
+      setValue('brand', defaultBrand);
+    }
+  }, [open, defaultBrand, setValue]);
 
   const onSubmit = async (data: ProjectFormData) => {
     setIsSubmitting(true);

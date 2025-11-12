@@ -17,6 +17,7 @@ import { Plus, Briefcase, Search, TrendingUp, Users, Palette, MoreVertical, Penc
 import { AddBrandModal } from '@/components/brands/AddBrandModal';
 import { EditBrandModal } from '@/components/brands/EditBrandModal';
 import { BrandDetailModal } from '@/components/brands/BrandDetailModal';
+import { AddProjectModal } from '@/components/projects/AddProjectModal';
 
 interface Brand {
   id: string;
@@ -132,6 +133,7 @@ export default function BrandsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [addProjectModalOpen, setAddProjectModalOpen] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
 
   // Load brands from localStorage
@@ -432,6 +434,20 @@ export default function BrandsPage() {
           brand={selectedBrand}
           onEdit={handleEditBrand}
           onDelete={handleDeleteBrand}
+          onAddProject={() => setAddProjectModalOpen(true)}
+        />
+      )}
+
+      {/* Add Project Modal (for adding projects to brand) */}
+      {selectedBrand && (
+        <AddProjectModal
+          open={addProjectModalOpen}
+          onOpenChange={setAddProjectModalOpen}
+          onProjectAdded={() => {
+            setAddProjectModalOpen(false);
+            setDetailModalOpen(true); // Reopen brand detail to show new project
+          }}
+          defaultBrand={selectedBrand.name}
         />
       )}
     </div>
