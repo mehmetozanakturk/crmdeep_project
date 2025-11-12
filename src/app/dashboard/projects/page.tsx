@@ -194,17 +194,13 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
 
-  // Load from localStorage on mount AND poll every 1 second
+  // Load from localStorage on mount
   useEffect(() => {
     const loadProjects = () => {
-      console.log('[Projects] Loading projects from localStorage...');
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsedProjects = JSON.parse(stored);
-        console.log('[Projects] Loaded projects:', parsedProjects.length);
-        setProjects(parsedProjects);
+        setProjects(JSON.parse(stored));
       } else {
-        console.log('[Projects] No stored projects, using demo data');
         setProjects(DEMO_PROJECTS);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_PROJECTS));
       }
@@ -214,22 +210,12 @@ export default function ProjectsPage() {
 
     // Listen for custom event
     const handleCustomEvent = () => {
-      console.log('[Projects] projectsUpdated event received!');
       loadProjects();
     };
 
-    // POLLING: Check localStorage every 1 second (guaranteed to work!)
-    const pollInterval = setInterval(() => {
-      console.log('[Projects] Polling localStorage...');
-      loadProjects();
-    }, 1000);
-
-    console.log('[Projects] Setting up event listener and polling...');
     window.addEventListener('projectsUpdated', handleCustomEvent);
 
     return () => {
-      console.log('[Projects] Cleaning up...');
-      clearInterval(pollInterval);
       window.removeEventListener('projectsUpdated', handleCustomEvent);
     };
   }, []);

@@ -115,16 +115,11 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
       // Save to localStorage
       const stored = localStorage.getItem('crmdeep_projects');
       const projects = stored ? JSON.parse(stored) : [];
-      console.log('[AddProject] Current projects in localStorage:', projects.length);
       projects.unshift(newProject);
-      console.log('[AddProject] Adding new project, total now:', projects.length);
       localStorage.setItem('crmdeep_projects', JSON.stringify(projects));
-      console.log('[AddProject] Saved to localStorage');
 
       // Dispatch custom event to notify other components
-      console.log('[AddProject] Dispatching projectsUpdated event...');
       window.dispatchEvent(new Event('projectsUpdated'));
-      console.log('[AddProject] Event dispatched!');
 
       onProjectAdded(newProject);
       reset();
