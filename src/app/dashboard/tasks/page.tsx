@@ -297,6 +297,7 @@ export default function TasksPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [groupBy, setGroupBy] = useState<string>('none');
+  const [availableProjects, setAvailableProjects] = useState<string[]>([]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -308,6 +309,16 @@ export default function TasksPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_TASKS));
     }
   }, []);
+
+  // Load available projects from localStorage
+  useEffect(() => {
+    const storedProjects = localStorage.getItem('crmdeep_projects');
+    if (storedProjects) {
+      const projects = JSON.parse(storedProjects);
+      const projectNames = projects.map((p: any) => p.name);
+      setAvailableProjects(projectNames);
+    }
+  }, [tasks]); // Re-fetch when tasks change (in case new projects were added)
 
   // Save to localStorage whenever tasks change
   useEffect(() => {
@@ -457,13 +468,19 @@ export default function TasksPage() {
       return { 'Tüm Görevler': filtered };
     }
 
+    // If groupBy is a specific project name, filter by that project
+    if (availableProjects.includes(groupBy)) {
+      const projectTasks = filtered.filter(task => task.project === groupBy);
+      return { [groupBy]: projectTasks };
+    }
+
     const grouped: Record<string, Task[]> = {};
 
     filtered.forEach((task) => {
       let groupKey = '';
 
       switch (groupBy) {
-        case 'project':
+        case 'all-projects':
           groupKey = task.project || 'Projesiz';
           break;
         case 'priority':
@@ -632,12 +649,25 @@ export default function TasksPage() {
 
           {/* Group By */}
           <Select value={groupBy} onValueChange={setGroupBy}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Gruplama" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Grupla</SelectItem>
-              <SelectItem value="project">Projeye Göre</SelectItem>
+              <SelectItem value="none">Gruplama Yok</SelectItem>
+              <SelectItem value="all-projects">Tüm Projelere Göre</SelectItem>
+              {availableProjects.length > 0 && (
+                <>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                    Projeler
+                  </div>
+                  {availableProjects.map((projectName) => (
+                    <SelectItem key={projectName} value={projectName}>
+                      📁 {projectName}
+                    </SelectItem>
+                  ))}
+                  <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                </>
+              )}
               <SelectItem value="priority">Önceliğe Göre</SelectItem>
               <SelectItem value="assignee">Kişiye Göre</SelectItem>
             </SelectContent>
@@ -816,6 +846,13 @@ export default function TasksPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="p-4 pt-0 space-y-3">
+                      {/* Project Badge */}
+                      <div>
+                        <Badge variant="outline" className="bg-primary-50 dark:bg-primary-950/30 text-primary-700 dark:text-primary-300 border-primary-200 dark:border-primary-700">
+                          📁 {task.project}
+                        </Badge>
+                      </div>
+
                       {/* Tags */}
                       <div className="flex flex-wrap gap-1">
                         {task.tags.map((tag, idx) => (
@@ -827,11 +864,6 @@ export default function TasksPage() {
                             {tag}
                           </Badge>
                         ))}
-                      </div>
-
-                      {/* Project */}
-                      <div className="text-xs text-neutral-600 dark:text-neutral-400">
-                        📁 {task.project}
                       </div>
 
                       {/* Due Date and Calendar Badge */}
