@@ -36,12 +36,14 @@ import {
   Trash2,
   ArrowUpDown,
   Filter,
+  Loader2,
 } from 'lucide-react';
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
 import { ProjectDetailModal } from '@/components/projects/ProjectDetailModal';
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
-import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
+import { getActiveWorkspaceId } from '@/lib/workspace-storage';
+import * as ProjectsAPI from '@/lib/api/projects';
 
 export interface Project {
   id: string;
@@ -192,63 +194,57 @@ export default function ProjectsPage() {
   const [addTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load from workspace-scoped localStorage on mount
+  // Load from Supabase
   useEffect(() => {
-    const loadProjects = () => {
-      try {
-        const loadedProjects = initializeWorkspaceData<Project>('projects', DEMO_PROJECTS);
-        setProjects(loadedProjects);
-      } catch (error) {
-        console.error('Error loading projects:', error);
-        setProjects(DEMO_PROJECTS);
-      }
+    loadProjectsData();
+
+    // Listen for workspace change
+    const handleWorkspaceChange = () => {
+      loadProjectsData();
     };
 
-    loadProjects();
-
-    // Listen for custom events
-    const handleCustomEvent = () => {
-      loadProjects();
-    };
-
-    window.addEventListener('projectsUpdated', handleCustomEvent);
-    window.addEventListener('workspaceChanged', handleCustomEvent);
+    window.addEventListener('workspaceChanged', handleWorkspaceChange);
 
     return () => {
-      window.removeEventListener('projectsUpdated', handleCustomEvent);
-      window.removeEventListener('workspaceChanged', handleCustomEvent);
+      window.removeEventListener('workspaceChanged', handleWorkspaceChange);
     };
   }, []);
 
-  // Load available workspaces (brands) from localStorage
-  useEffect(() => {
-    const storedWorkspaces = localStorage.getItem('crmdeep_workspaces');
-    if (storedWorkspaces) {
-      const workspaces = JSON.parse(storedWorkspaces);
-      const workspaceNames = workspaces.map((w: any) => w.name);
-      setAvailableBrands(workspaceNames);
-    }
-  }, [projects]); // Re-fetch when projects change (in case new workspaces were added)
+  const loadProjectsData = async () => {
+    try {
+      setLoading(true);
+      const workspaceId = getActiveWorkspaceId();
+      if (!workspaceId) {
+        console.warn('No active workspace');
+        setLoading(false);
+        return;
+      }
 
-  // Save to workspace-scoped localStorage whenever projects change
-  useEffect(() => {
-    if (projects.length > 0) {
-      setWorkspaceData('projects', projects);
+      const data = await ProjectsAPI.loadProjects(workspaceId);
+      setProjects(data);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [projects]);
-
-  const handleProjectAdded = (newProject: Project) => {
-    setProjects([newProject, ...projects]);
   };
 
-  const handleProjectUpdated = (updatedProject: Project) => {
-    setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
+  const handleProjectAdded = async (newProject: Project) => {
+    await loadProjectsData();
   };
 
-  const handleDeleteProject = (projectId: string) => {
+  const handleProjectUpdated = async (updatedProject: Project) => {
+    await loadProjectsData();
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
     if (confirm('Bu projeyi silmek istediğinizden emin misiniz?')) {
-      setProjects(projects.filter(p => p.id !== projectId));
+      const success = await ProjectsAPI.deleteProject(projectId);
+      if (success) {
+        await loadProjectsData();
+      }
     }
   };
 
@@ -393,6 +389,19 @@ export default function ProjectsPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary-600 dark:text-primary-400" />
+          <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            Projeler yükleniyor...
+          </h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -400,7 +409,7 @@ export default function ProjectsPage() {
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Projeler</h1>
           <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-            Tüm projelerinizi tek yerden takip edin
+            {projects.length} proje Supabase'den yüklendi
           </p>
         </div>
         <Button onClick={() => setAddModalOpen(true)}>

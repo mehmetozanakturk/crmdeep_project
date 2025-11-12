@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import * as ProjectsAPI from '@/lib/api/projects';
 import {
   Dialog,
   DialogContent,
@@ -115,23 +116,26 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
       const tasksCompleted = parseInt(data.tasksCompleted);
       const progress = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
 
-      const updatedProject: Project = {
-        ...project,
+      const updateData: ProjectsAPI.UpdateProjectInput = {
+        id: project.id,
         name: data.name,
         description: data.description,
         status: data.status as Project['status'],
         priority: data.priority as Project['priority'],
-        brand: data.brand,
-        startDate: data.startDate,
-        endDate: data.endDate,
+        start_date: data.startDate,
+        end_date: data.endDate,
         progress,
-        tasksTotal,
-        tasksCompleted,
-        teamMembers,
-        updated_at: new Date().toISOString(),
+        team_members: teamMembers,
       };
-      onProjectUpdated(updatedProject);
-      onOpenChange(false);
+
+      const result = await ProjectsAPI.updateProject(updateData);
+
+      if (result) {
+        onProjectUpdated(result as any);
+        onOpenChange(false);
+      } else {
+        alert('Proje güncellenirken bir hata oluştu');
+      }
     } catch (error) {
       console.error('Error updating project:', error);
     } finally {

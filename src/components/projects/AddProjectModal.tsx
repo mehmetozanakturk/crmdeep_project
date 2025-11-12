@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { getWorkspaceData, setWorkspaceData } from '@/lib/workspace-storage';
+import { getActiveWorkspaceId } from '@/lib/workspace-storage';
+import * as ProjectsAPI from '@/lib/api/projects';
 import {
   Dialog,
   DialogContent,
@@ -82,6 +83,12 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
   const onSubmit = async (data: ProjectFormData) => {
     setIsSubmitting(true);
     try {
+      const workspaceId = getActiveWorkspaceId();
+      if (!workspaceId) {
+        alert('Lütfen bir workspace seçin');
+        return;
+      }
+
       const colors = ['#3B82F6', '#10B981', '#EC4899', '#0EA5E9', '#14B8A6', '#8B5CF6', '#EF4444', '#F59E0B'];
 
       // Parse team members (comma separated names)
@@ -96,36 +103,29 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
       const tasksCompleted = parseInt(data.tasksCompleted);
       const progress = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
 
-      const newProject: Project = {
-        id: Date.now().toString(),
+      const projectData: ProjectsAPI.CreateProjectInput = {
         name: data.name,
         description: data.description,
         status: data.status as Project['status'],
         priority: data.priority as Project['priority'],
-        brand: defaultBrand || data.brand || '',
-        startDate: data.startDate,
-        endDate: data.endDate,
+        start_date: data.startDate,
+        end_date: data.endDate,
         progress,
-        tasksTotal,
-        tasksCompleted,
-        teamMembers,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        team_members: teamMembers,
       };
 
-      // Save to workspace-scoped localStorage
-      const projects = getWorkspaceData('projects', []);
-      projects.unshift(newProject);
-      setWorkspaceData('projects', projects);
+      const newProject = await ProjectsAPI.createProject(workspaceId, projectData);
 
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(new Event('projectsUpdated'));
-
-      onProjectAdded(newProject);
-      reset();
-      onOpenChange(false);
+      if (newProject) {
+        onProjectAdded(newProject as any);
+        reset();
+        onOpenChange(false);
+      } else {
+        alert('Proje eklenirken bir hata oluştu');
+      }
     } catch (error) {
       console.error('Error adding project:', error);
+      alert('Proje eklenirken bir hata oluştu');
     } finally {
       setIsSubmitting(false);
     }
