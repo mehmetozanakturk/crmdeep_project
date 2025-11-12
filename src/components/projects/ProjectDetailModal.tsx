@@ -1,6 +1,8 @@
 'use client';
 
 import { type Project } from '@/app/dashboard/projects/page';
+import { type Task } from '@/app/dashboard/tasks/page';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,8 @@ import {
   Briefcase,
   Target,
   TrendingUp,
+  Plus,
+  ListTodo,
 } from 'lucide-react';
 
 interface ProjectDetailModalProps {
@@ -30,6 +34,7 @@ interface ProjectDetailModalProps {
   project: Project;
   onEdit: (project: Project) => void;
   onDelete: (projectId: string) => void;
+  onAddTask?: () => void;
 }
 
 export function ProjectDetailModal({
@@ -38,7 +43,21 @@ export function ProjectDetailModal({
   project,
   onEdit,
   onDelete,
+  onAddTask,
 }: ProjectDetailModalProps) {
+  const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+
+  // Load tasks for this project
+  useEffect(() => {
+    if (open) {
+      const stored = localStorage.getItem('crmdeep_tasks');
+      if (stored) {
+        const allTasks: Task[] = JSON.parse(stored);
+        const filtered = allTasks.filter(task => task.project === project.name);
+        setProjectTasks(filtered);
+      }
+    }
+  }, [open, project.name]);
   const getStatusBadge = (status: Project['status']) => {
     switch (status) {
       case 'active':
@@ -239,6 +258,81 @@ export function ProjectDetailModal({
                 {project.teamMembers.length}
               </p>
             </div>
+          </div>
+
+          {/* Project Tasks */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
+                <ListTodo className="h-4 w-4" />
+                Proje Görevleri ({projectTasks.length})
+              </h3>
+              {onAddTask && (
+                <Button size="sm" onClick={() => {
+                  onAddTask();
+                  onOpenChange(false);
+                }}>
+                  <Plus className="h-3 w-3 mr-1" />
+                  Görev Ekle
+                </Button>
+              )}
+            </div>
+            {projectTasks.length > 0 ? (
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {projectTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      {task.status === 'done' ? (
+                        <CheckCircle2 className="h-4 w-4 text-success-600 dark:text-success-400" />
+                      ) : task.status === 'in-progress' ? (
+                        <Clock className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-neutral-400" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                          {task.title}
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          {task.assignee.name} • {new Date(task.dueDate).toLocaleDateString('tr-TR')}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={
+                        task.priority === 'high'
+                          ? 'border-danger-200 dark:border-danger-700 text-danger-700 dark:text-danger-400'
+                          : task.priority === 'medium'
+                          ? 'border-warning-200 dark:border-warning-700 text-warning-700 dark:text-warning-400'
+                          : 'border-neutral-200 dark:border-neutral-700'
+                      }
+                    >
+                      {task.priority === 'high' ? 'Yüksek' : task.priority === 'medium' ? 'Orta' : 'Düşük'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 px-4 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+                <ListTodo className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Bu projeye henüz görev eklenmemiş
+                </p>
+                {onAddTask && (
+                  <Button size="sm" variant="outline" className="mt-3" onClick={() => {
+                    onAddTask();
+                    onOpenChange(false);
+                  }}>
+                    <Plus className="h-3 w-3 mr-1" />
+                    İlk Görevi Ekle
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

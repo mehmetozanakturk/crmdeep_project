@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -43,9 +43,10 @@ interface AddTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTaskAdded: (task: Task) => void;
+  defaultProject?: string;
 }
 
-export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalProps) {
+export function AddTaskModal({ open, onOpenChange, onTaskAdded, defaultProject }: AddTaskModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -60,11 +61,19 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalPr
     defaultValues: {
       status: 'todo',
       priority: 'medium',
+      project: defaultProject || '',
     },
   });
 
   const statusValue = watch('status');
   const priorityValue = watch('priority');
+
+  // Set project value when modal opens with defaultProject
+  useEffect(() => {
+    if (open && defaultProject) {
+      setValue('project', defaultProject);
+    }
+  }, [open, defaultProject, setValue]);
 
   const onSubmit = async (data: TaskFormData) => {
     setIsSubmitting(true);

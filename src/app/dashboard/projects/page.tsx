@@ -40,6 +40,7 @@ import {
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
 import { ProjectDetailModal } from '@/components/projects/ProjectDetailModal';
+import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 
 export interface Project {
   id: string;
@@ -189,6 +190,7 @@ export default function ProjectsPage() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [addTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   // Load from localStorage on mount
@@ -641,6 +643,7 @@ export default function ProjectsPage() {
           project={selectedProject}
           onEdit={handleEditProject}
           onDelete={handleDeleteProject}
+          onAddTask={() => setAddTaskModalOpen(true)}
         />
       )}
 
@@ -651,6 +654,19 @@ export default function ProjectsPage() {
           onOpenChange={setEditModalOpen}
           project={selectedProject}
           onProjectUpdated={handleProjectUpdated}
+        />
+      )}
+
+      {/* Add Task Modal (for adding tasks to project) */}
+      {selectedProject && (
+        <AddTaskModal
+          open={addTaskModalOpen}
+          onOpenChange={setAddTaskModalOpen}
+          onTaskAdded={() => {
+            setAddTaskModalOpen(false);
+            setDetailModalOpen(true); // Reopen project detail to show new task
+          }}
+          defaultProject={selectedProject.name}
         />
       )}
     </div>
