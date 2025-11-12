@@ -107,6 +107,9 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded, defaultProject }
       tasks.unshift(newTask);
       localStorage.setItem('crmdeep_tasks', JSON.stringify(tasks));
 
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new Event('tasksUpdated'));
+
       onTaskAdded(newTask);
       reset();
       onOpenChange(false);

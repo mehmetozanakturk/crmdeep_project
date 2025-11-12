@@ -118,6 +118,9 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
       projects.unshift(newProject);
       localStorage.setItem('crmdeep_projects', JSON.stringify(projects));
 
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new Event('projectsUpdated'));
+
       onProjectAdded(newProject);
       reset();
       onOpenChange(false);

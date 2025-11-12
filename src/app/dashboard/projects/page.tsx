@@ -192,17 +192,52 @@ export default function ProjectsPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [addTaskModalOpen, setAddTaskModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
 
   // Load from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setProjects(JSON.parse(stored));
-    } else {
-      setProjects(DEMO_PROJECTS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_PROJECTS));
-    }
+    const loadProjects = () => {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setProjects(JSON.parse(stored));
+      } else {
+        setProjects(DEMO_PROJECTS);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_PROJECTS));
+      }
+    };
+
+    loadProjects();
+
+    // Listen for storage changes (when projects are added from other components)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        loadProjects();
+      }
+    };
+
+    // Listen for custom event (for same-window updates)
+    const handleCustomEvent = () => {
+      loadProjects();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('projectsUpdated', handleCustomEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('projectsUpdated', handleCustomEvent);
+    };
   }, []);
+
+  // Load available brands from localStorage
+  useEffect(() => {
+    const storedBrands = localStorage.getItem('crmdeep_brands');
+    if (storedBrands) {
+      const brands = JSON.parse(storedBrands);
+      const brandNames = brands.map((b: any) => b.name);
+      setAvailableBrands(brandNames);
+    }
+  }, [projects]); // Re-fetch when projects change (in case new brands were added)
 
   // Save to localStorage whenever projects change
   useEffect(() => {
@@ -241,6 +276,14 @@ export default function ProjectsPage() {
       project.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // Apply brand filter (if a specific brand is selected in groupBy)
+    if (groupBy !== 'none' && groupBy !== 'status' && groupBy !== 'priority' && groupBy !== 'brand') {
+      // If groupBy is a specific brand name, filter by that brand
+      if (availableBrands.includes(groupBy)) {
+        filtered = filtered.filter(p => p.brand === groupBy);
+      }
+    }
+
     // Sort
     filtered = filtered.sort((a, b) => {
       switch (sortBy) {
@@ -270,6 +313,11 @@ export default function ProjectsPage() {
 
     if (groupBy === 'none') {
       return { 'Tüm Projeler': filtered };
+    }
+
+    // If groupBy is a specific brand name, show only that brand's projects
+    if (availableBrands.includes(groupBy)) {
+      return { [groupBy]: filtered };
     }
 
     const grouped: Record<string, Project[]> = {};
@@ -465,7 +513,7 @@ export default function ProjectsPage() {
           </Select>
 
           <Select value={groupBy} onValueChange={setGroupBy}>
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Grupla" />
             </SelectTrigger>
@@ -473,7 +521,20 @@ export default function ProjectsPage() {
               <SelectItem value="none">Gruplama Yok</SelectItem>
               <SelectItem value="status">Duruma Göre</SelectItem>
               <SelectItem value="priority">Önceliğe Göre</SelectItem>
-              <SelectItem value="brand">Markaya Göre</SelectItem>
+              <SelectItem value="brand">Tüm Markalara Göre</SelectItem>
+              {availableBrands.length > 0 && (
+                <>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                    Markalar
+                  </div>
+                  {availableBrands.map((brandName) => (
+                    <SelectItem key={brandName} value={brandName}>
+                      🏢 {brandName}
+                    </SelectItem>
+                  ))}
+                  <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>

@@ -301,23 +301,53 @@ export default function TasksPage() {
 
   // Load from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setTasks(JSON.parse(stored));
-    } else {
-      setTasks(DEMO_TASKS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_TASKS));
-    }
+    const loadTasks = () => {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setTasks(JSON.parse(stored));
+      } else {
+        setTasks(DEMO_TASKS);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_TASKS));
+      }
+    };
+
+    loadTasks();
+
+    // Listen for custom event (for same-window updates)
+    const handleCustomEvent = () => {
+      loadTasks();
+    };
+
+    window.addEventListener('tasksUpdated', handleCustomEvent);
+
+    return () => {
+      window.removeEventListener('tasksUpdated', handleCustomEvent);
+    };
   }, []);
 
   // Load available projects from localStorage
   useEffect(() => {
-    const storedProjects = localStorage.getItem('crmdeep_projects');
-    if (storedProjects) {
-      const projects = JSON.parse(storedProjects);
-      const projectNames = projects.map((p: any) => p.name);
-      setAvailableProjects(projectNames);
-    }
+    const loadProjects = () => {
+      const storedProjects = localStorage.getItem('crmdeep_projects');
+      if (storedProjects) {
+        const projects = JSON.parse(storedProjects);
+        const projectNames = projects.map((p: any) => p.name);
+        setAvailableProjects(projectNames);
+      }
+    };
+
+    loadProjects();
+
+    // Listen for projects updates
+    const handleProjectsUpdate = () => {
+      loadProjects();
+    };
+
+    window.addEventListener('projectsUpdated', handleProjectsUpdate);
+
+    return () => {
+      window.removeEventListener('projectsUpdated', handleProjectsUpdate);
+    };
   }, [tasks]); // Re-fetch when tasks change (in case new projects were added)
 
   // Save to localStorage whenever tasks change
@@ -452,6 +482,14 @@ export default function TasksPage() {
     // Apply priority filter
     if (priorityFilter !== 'all') {
       filtered = filtered.filter(t => t.priority === priorityFilter);
+    }
+
+    // Apply project filter (if a specific project is selected in groupBy)
+    if (groupBy !== 'none' && groupBy !== 'all-projects' && groupBy !== 'priority' && groupBy !== 'assignee') {
+      // If groupBy is a specific project name, filter by that project
+      if (availableProjects.includes(groupBy)) {
+        filtered = filtered.filter(t => t.project === groupBy);
+      }
     }
 
     // Apply sorting
