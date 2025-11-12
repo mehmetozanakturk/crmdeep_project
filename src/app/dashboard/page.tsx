@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -21,6 +21,7 @@ import {
   Star,
   ArrowUpRight,
   Activity,
+  Loader2,
 } from 'lucide-react';
 import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
@@ -32,51 +33,110 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { getActiveWorkspaceId } from '@/lib/workspace-storage';
+import * as CompaniesAPI from '@/lib/api/companies';
+import * as ProjectsAPI from '@/lib/api/projects';
+import * as TasksAPI from '@/lib/api/tasks';
+import * as CampaignsAPI from '@/lib/api/campaigns';
 
 export default function DashboardPage() {
   const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [timeRange, setTimeRange] = useState('30');
-  // TODO: Replace with real data from Supabase
-  const stats = [
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+
+  // Load real data from Supabase
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const workspaceId = getActiveWorkspaceId();
+      if (!workspaceId) {
+        console.warn('No active workspace');
+        setLoading(false);
+        return;
+      }
+
+      // Load all data in parallel
+      const [companies, projects, tasks, campaigns] = await Promise.all([
+        CompaniesAPI.loadCompanies(workspaceId),
+        ProjectsAPI.loadProjects(workspaceId),
+        TasksAPI.loadTasks(workspaceId),
+        CampaignsAPI.loadCampaigns(workspaceId),
+      ]);
+
+      // Calculate stats
+      const activeCompanies = companies.filter(c => c.status === 'active').length;
+      const activeProjects = projects.filter(p => p.status === 'active').length;
+      const completedTasks = tasks.filter(t => t.status === 'done').length;
+      const completionRate = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+
+      const campaignStats = await CampaignsAPI.getCampaignStats(workspaceId);
+
+      setDashboardData({
+        companies,
+        projects,
+        tasks,
+        campaigns,
+        stats: {
+          activeCompanies,
+          activeProjects,
+          completionRate,
+          totalRevenue: campaignStats.totalSpent,
+        },
+        campaignStats,
+      });
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Use real data from Supabase
+  const stats = dashboardData ? [
     {
-      name: 'Total Revenue',
-      value: '$124,500',
-      change: '+12.5%',
+      name: 'Total Campaign Spend',
+      value: `₺${dashboardData.campaignStats.totalSpent.toLocaleString('tr-TR')}`,
+      change: dashboardData.campaigns.length > 0 ? `${dashboardData.campaigns.length} campaigns` : 'No campaigns',
       trend: 'up',
       icon: DollarSign,
-      description: 'vs last month',
+      description: 'total advertising spend',
       color: 'text-success-600',
     },
     {
-      name: 'Active Brands',
-      value: '12',
-      change: '+2',
+      name: 'Active Companies',
+      value: dashboardData.stats.activeCompanies.toString(),
+      change: `${dashboardData.companies.length} total`,
       trend: 'up',
       icon: Briefcase,
-      description: '2 new this month',
+      description: 'companies in system',
       color: 'text-primary-600',
     },
     {
       name: 'Active Projects',
-      value: '24',
-      change: '+5',
+      value: dashboardData.stats.activeProjects.toString(),
+      change: `${dashboardData.projects.length} total`,
       trend: 'up',
       icon: FolderKanban,
-      description: '18 in progress',
+      description: 'projects tracked',
       color: 'text-warning-600',
     },
     {
-      name: 'Completion Rate',
-      value: '87%',
-      change: '+3.2%',
+      name: 'Task Completion',
+      value: `${dashboardData.stats.completionRate}%`,
+      change: `${dashboardData.tasks.filter((t: any) => t.status === 'done').length}/${dashboardData.tasks.length}`,
       trend: 'up',
       icon: Target,
-      description: 'task completion',
+      description: 'tasks completed',
       color: 'text-success-600',
     },
-  ];
+  ] : [];
 
   const salesPipeline = [
     { stage: 'Leads', count: 45, value: '$225,000', color: 'bg-neutral-500' },
@@ -194,6 +254,22 @@ export default function DashboardPage() {
     { status: 'Completed', count: 2, percentage: 8 },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary-600 dark:text-primary-400" />
+          <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            Dashboard yükleniyor...
+          </h3>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+            Veriler Supabase'den çekiliyor
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -201,7 +277,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Dashboard</h1>
           <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-            Welcome back! Here&apos;s a comprehensive overview of your business.
+            {dashboardData ? `${dashboardData.companies.length} companies, ${dashboardData.projects.length} projects, ${dashboardData.tasks.length} tasks tracked` : 'Welcome back! Here\'s a comprehensive overview of your business.'}
           </p>
         </div>
         <div className="flex gap-2">
