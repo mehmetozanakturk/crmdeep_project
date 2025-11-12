@@ -173,16 +173,22 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
             </div>
 
             {/* Brand */}
-            <div>
+            <div className="md:col-span-2">
               <Label htmlFor="brand">Marka *</Label>
               <Input
                 id="brand"
                 placeholder="TechCorp"
                 {...register('brand')}
                 className="mt-1"
+                disabled={!!defaultBrand}
               />
               {errors.brand && (
                 <p className="mt-1 text-xs text-danger-600">{errors.brand.message}</p>
+              )}
+              {defaultBrand && (
+                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                  Bu proje {defaultBrand} markasına eklenecek
+                </p>
               )}
             </div>
 
