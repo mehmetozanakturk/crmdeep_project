@@ -31,7 +31,7 @@ const projectSchema = z.object({
   description: z.string().min(5, 'Açıklama en az 5 karakter olmalı'),
   status: z.string(),
   priority: z.string(),
-  brand: z.string().min(2, 'Marka adı gerekli'),
+  brand: z.string().optional(),
   startDate: z.string().min(1, 'Başlangıç tarihi gerekli'),
   endDate: z.string().min(1, 'Bitiş tarihi gerekli'),
   tasksTotal: z.string().min(1, 'Toplam görev sayısı gerekli'),
@@ -101,7 +101,7 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
         description: data.description,
         status: data.status as Project['status'],
         priority: data.priority as Project['priority'],
-        brand: data.brand,
+        brand: defaultBrand || data.brand || '',
         startDate: data.startDate,
         endDate: data.endDate,
         progress,
@@ -172,25 +172,21 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded, defaultBra
               )}
             </div>
 
-            {/* Brand */}
-            <div className="md:col-span-2">
-              <Label htmlFor="brand">Marka *</Label>
-              <Input
-                id="brand"
-                placeholder="TechCorp"
-                {...register('brand')}
-                className="mt-1"
-                disabled={!!defaultBrand}
-              />
-              {errors.brand && (
-                <p className="mt-1 text-xs text-danger-600">{errors.brand.message}</p>
-              )}
-              {defaultBrand && (
-                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                  Bu proje {defaultBrand} markasına eklenecek
-                </p>
-              )}
-            </div>
+            {/* Brand - Only show when not adding from a brand page */}
+            {!defaultBrand && (
+              <div className="md:col-span-2">
+                <Label htmlFor="brand">Marka *</Label>
+                <Input
+                  id="brand"
+                  placeholder="TechCorp"
+                  {...register('brand')}
+                  className="mt-1"
+                />
+                {errors.brand && (
+                  <p className="mt-1 text-xs text-danger-600">{errors.brand.message}</p>
+                )}
+              </div>
+            )}
 
             {/* Status */}
             <div>
