@@ -44,11 +44,13 @@ import {
   SortAsc,
   SortDesc,
   Search,
+  Loader2,
 } from 'lucide-react';
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 import { EditTaskModal } from '@/components/tasks/EditTaskModal';
 import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
-import { getWorkspaceData, setWorkspaceData, initializeWorkspaceData } from '@/lib/workspace-storage';
+import { getActiveWorkspaceId } from '@/lib/workspace-storage';
+import * as TasksAPI from '@/lib/api/tasks';
 
 export interface Task {
   id: string;
@@ -297,85 +299,70 @@ export default function TasksPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [groupBy, setGroupBy] = useState<string>('none');
   const [availableProjects, setAvailableProjects] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load from workspace-scoped localStorage on mount
+  // Load from Supabase
   useEffect(() => {
-    const loadTasks = () => {
-      try {
-        const loadedTasks = initializeWorkspaceData<Task>('tasks', DEMO_TASKS);
-        setTasks(loadedTasks);
-      } catch (error) {
-        console.error('Error loading tasks:', error);
-        setTasks(DEMO_TASKS);
-      }
+    loadTasksData();
+
+    const handleWorkspaceChange = () => {
+      loadTasksData();
     };
 
-    loadTasks();
-
-    // Listen for custom events
-    const handleCustomEvent = () => {
-      loadTasks();
-    };
-
-    window.addEventListener('tasksUpdated', handleCustomEvent);
-    window.addEventListener('workspaceChanged', handleCustomEvent);
+    window.addEventListener('workspaceChanged', handleWorkspaceChange);
 
     return () => {
-      window.removeEventListener('tasksUpdated', handleCustomEvent);
-      window.removeEventListener('workspaceChanged', handleCustomEvent);
+      window.removeEventListener('workspaceChanged', handleWorkspaceChange);
     };
   }, []);
 
-  // Load available projects from workspace-scoped localStorage
-  useEffect(() => {
-    const loadProjects = () => {
-      try {
-        const projects = getWorkspaceData('projects', []);
-        const projectNames = projects.map((p: any) => p.name);
-        setAvailableProjects(projectNames);
-      } catch (error) {
-        console.error('Error loading projects:', error);
+  const loadTasksData = async () => {
+    try {
+      setLoading(true);
+      const workspaceId = getActiveWorkspaceId();
+      if (!workspaceId) {
+        console.warn('No active workspace');
+        setLoading(false);
+        return;
       }
-    };
 
-    loadProjects();
-
-    // Listen for projects updates
-    const handleProjectsUpdate = () => {
-      loadProjects();
-    };
-
-    window.addEventListener('projectsUpdated', handleProjectsUpdate);
-    window.addEventListener('workspaceChanged', handleProjectsUpdate);
-
-    return () => {
-      window.removeEventListener('projectsUpdated', handleProjectsUpdate);
-      window.removeEventListener('workspaceChanged', handleProjectsUpdate);
-    };
-  }, [tasks]); // Re-fetch when tasks change (in case new projects were added)
-
-  // Save to workspace-scoped localStorage whenever tasks change
-  useEffect(() => {
-    if (tasks.length > 0) {
-      setWorkspaceData('tasks', tasks);
+      const data = await TasksAPI.loadTasks(workspaceId);
+      setTasks(data);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [tasks]);
-
-  const handleTaskAdded = (newTask: Task) => {
-    setTasks([newTask, ...tasks]);
   };
 
-  const handleTaskUpdated = (updatedTask: Task) => {
-    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+  const handleTaskAdded = async (newTask: Task) => {
+    await loadTasksData();
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleTaskUpdated = async (updatedTask: Task) => {
+    await loadTasksData();
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
     if (confirm('Bu görevi silmek istediğinizden emin misiniz?')) {
-      setTasks(tasks.filter(t => t.id !== taskId));
+      const success = await TasksAPI.deleteTask(taskId);
+      if (success) {
+        await loadTasksData();
+      }
     }
   };
 
-  const handleStatusChange = (taskId: string, newStatus: Task['status']) => {
+  const handleStatusChange = async (taskId: string, newStatus: Task['status']) => {
+    const result = await TasksAPI.updateTask({
+      id: taskId,
+      status: newStatus,
+    });
+    if (result) {
+      await loadTasksData();
+    }
+  };
+
+  const _handleStatusChange_OLD = (taskId: string, newStatus: Task['status']) => {
     setTasks(tasks.map(t =>
       t.id === taskId
         ? { ...t, status: newStatus, updated_at: new Date().toISOString() }
@@ -576,6 +563,19 @@ export default function TasksPage() {
     return new Date(dueDate) < new Date();
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary-600 dark:text-primary-400" />
+          <h3 className="mt-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+            Görevler yükleniyor...
+          </h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -584,7 +584,7 @@ export default function TasksPage() {
           <div>
             <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Görevler</h1>
             <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-              Görevlerinizi yönetin, filtreleyin ve takvime ekleyin
+              {tasks.length} görev Supabase'den yüklendi
             </p>
           </div>
           <Button onClick={() => setAddModalOpen(true)}>
