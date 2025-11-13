@@ -104,7 +104,31 @@ Supabase Dashboard'da:
 
 ✅ **Başarılı:** "Success. No rows returned" mesajını göreceksiniz
 
-#### 4.3 Doğrulama
+#### 4.3 Campaigns & Emails Migration
+
+`supabase/migrations/20241113000000_campaigns_and_emails.sql` dosyasının içeriğini kopyalayıp SQL Editor'e yapıştırın ve "Run" butonuna basın.
+
+✅ **Başarılı:** "Success. No rows returned" mesajını göreceksiniz
+
+#### 4.4 Campaigns & Emails RLS
+
+`supabase/migrations/20241113000001_campaigns_emails_rls.sql` dosyasının içeriğini kopyalayıp SQL Editor'e yapıştırın ve "Run" butonuna basın.
+
+✅ **Başarılı:** "Success. No rows returned" mesajını göreceksiniz
+
+#### 4.5 Custom Reports Migration
+
+`supabase/migrations/20241113000002_custom_reports.sql` dosyasının içeriğini kopyalayıp SQL Editor'e yapıştırın ve "Run" butonuna basın.
+
+✅ **Başarılı:** "Success. No rows returned" mesajını göreceksiniz
+
+#### 4.6 Custom Reports RLS
+
+`supabase/migrations/20241113000003_custom_reports_rls.sql` dosyasının içeriğini kopyalayıp SQL Editor'e yapıştırın ve "Run" butonuna basın.
+
+✅ **Başarılı:** "Success. No rows returned" mesajını göreceksiniz
+
+#### 4.7 Doğrulama
 
 Sol menüden **Table Editor** → Şu tabloları görmelisiniz:
 - profiles
@@ -118,6 +142,11 @@ Sol menüden **Table Editor** → Şu tabloları görmelisiniz:
 - task_labels
 - attachments
 - activity_logs
+- campaigns
+- campaign_performance_history
+- emails
+- custom_reports
+- report_exports
 
 ---
 
