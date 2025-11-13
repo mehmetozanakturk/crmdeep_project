@@ -151,15 +151,6 @@ export const CRM_MODULES: CRMModule[] = [
   // SALES MODULES
   // ============================================================================
   {
-    key: 'brands',
-    name: 'Markalar',
-    description: 'Marka yönetimi ve takibi',
-    icon: Briefcase,
-    category: 'sales',
-    href: '/dashboard/brands',
-    defaultPinned: true,
-  },
-  {
     key: 'leads',
     name: 'Potansiyel Müşteriler',
     description: 'Lead yönetimi ve takibi',
