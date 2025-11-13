@@ -15,6 +15,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/components/theme-provider';
+import { BrandSwitcher } from './BrandSwitcher';
 
 interface HeaderProps {
   onMobileSidebarToggle: () => void;
@@ -58,6 +59,11 @@ export function Header({ onMobileSidebarToggle }: HeaderProps) {
           <Link href="/dashboard" className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-primary-600 dark:text-primary-400">CRMDeep</h1>
           </Link>
+
+          {/* Brand Switcher */}
+          <div className="hidden lg:block">
+            <BrandSwitcher />
+          </div>
 
           {/* Search Bar */}
           <div className="relative hidden md:block">
