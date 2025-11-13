@@ -64,7 +64,7 @@ export function EditDealModal({ open, onOpenChange, deal, onDealUpdated }: EditD
       stage: deal.stage,
       probability: deal.probability.toString(),
       assignee: deal.assignee,
-      contactPerson: deal.contactPerson,
+      contactPerson: deal.contact_person,
       tags: deal.tags?.join(', ') || '',
     },
   });
@@ -80,7 +80,7 @@ export function EditDealModal({ open, onOpenChange, deal, onDealUpdated }: EditD
         stage: deal.stage,
         probability: deal.probability.toString(),
         assignee: deal.assignee,
-        contactPerson: deal.contactPerson,
+        contactPerson: deal.contact_person,
         tags: deal.tags?.join(', ') || '',
       });
     }
@@ -98,12 +98,12 @@ export function EditDealModal({ open, onOpenChange, deal, onDealUpdated }: EditD
         stage: data.stage as Deal['stage'],
         probability: parseInt(data.probability),
         assignee: data.assignee,
-        contactPerson: data.contactPerson,
+        contact_person: data.contactPerson,
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
         updated_at: new Date().toISOString(),
       };
 
-      onDealUpdated(updatedDeal);
+      await onDealUpdated(updatedDeal);
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating deal:', error);

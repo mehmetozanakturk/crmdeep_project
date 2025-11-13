@@ -68,22 +68,20 @@ export function AddDealModal({ open, onOpenChange, onDealAdded }: AddDealModalPr
     setIsSubmitting(true);
 
     try {
-      const newDeal: Deal = {
-        id: Date.now().toString(),
+      const newDeal = {
         title: data.title,
         company: data.company,
         value: parseInt(data.value),
         stage: data.stage as Deal['stage'],
         probability: parseInt(data.probability),
         assignee: data.assignee,
-        contactPerson: data.contactPerson,
-        daysInStage: 0,
+        assignee_avatar: '',
+        contact_person: data.contactPerson,
+        days_in_stage: 0,
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
 
-      onDealAdded(newDeal);
+      await onDealAdded(newDeal as any);
       reset();
       onOpenChange(false);
     } catch (error) {

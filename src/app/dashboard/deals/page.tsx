@@ -27,146 +27,72 @@ import {
   Pencil,
   Trash2,
   MoveRight,
+  Loader2,
 } from 'lucide-react';
 import { AddDealModal } from '@/components/deals/AddDealModal';
 import { EditDealModal } from '@/components/deals/EditDealModal';
+import { useOrganization } from '@/lib/hooks/useOrganization';
+import { createClient } from '@/lib/supabase/client';
 
 type DealStage = 'lead' | 'qualified' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
 
 export interface Deal {
   id: string;
+  organization_id: string;
   title: string;
   company: string;
   value: number;
   stage: DealStage;
   probability: number;
   assignee: string;
-  assigneeAvatar?: string;
-  daysInStage: number;
-  contactPerson: string;
+  assignee_avatar?: string;
+  days_in_stage: number;
+  contact_person: string;
   tags: string[];
   created_at: string;
   updated_at: string;
 }
 
-const DEMO_DEALS: Deal[] = [
-  {
-    id: '1',
-    title: 'Kurumsal CRM Uygulaması',
-    company: 'TechCorp Solutions',
-    value: 850000,
-    stage: 'proposal',
-    probability: 70,
-    assignee: 'Ayşe Y.',
-    assigneeAvatar: '',
-    daysInStage: 5,
-    contactPerson: 'Ahmet Yılmaz',
-    tags: ['Kurumsal', 'Yüksek Öncelik'],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Pazarlama Otomasyonu Paketi',
-    company: 'Digital Marketing Co',
-    value: 450000,
-    stage: 'negotiation',
-    probability: 85,
-    assignee: 'Mehmet C.',
-    assigneeAvatar: '',
-    daysInStage: 3,
-    contactPerson: 'Zeynep Kaya',
-    tags: ['Pazarlama'],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Website Yenileme Projesi',
-    company: 'E-commerce Plus',
-    value: 320000,
-    stage: 'qualified',
-    probability: 60,
-    assignee: 'Can R.',
-    assigneeAvatar: '',
-    daysInStage: 8,
-    contactPerson: 'Ali Demir',
-    tags: ['Tasarım', 'Web'],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    title: 'Mobil Uygulama Geliştirme',
-    company: 'StartUp Ventures',
-    value: 1250000,
-    stage: 'lead',
-    probability: 30,
-    assignee: 'Deniz K.',
-    assigneeAvatar: '',
-    daysInStage: 12,
-    contactPerson: 'Selin Öz',
-    tags: ['Mobil', 'Büyük Anlaşma'],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    title: 'Marka Stratejisi Danışmanlığı',
-    company: 'Creative Agency',
-    value: 180000,
-    stage: 'closed_won',
-    probability: 100,
-    assignee: 'Elif A.',
-    assigneeAvatar: '',
-    daysInStage: 45,
-    contactPerson: 'Burak Şen',
-    tags: ['Marka', 'Kazanıldı'],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: '6',
-    title: 'Sosyal Medya Yönetimi',
-    company: 'Yerel İşletme',
-    value: 120000,
-    stage: 'proposal',
-    probability: 50,
-    assignee: 'Ayşe Y.',
-    assigneeAvatar: '',
-    daysInStage: 7,
-    contactPerson: 'Fatma Yıldız',
-    tags: ['Sosyal Medya'],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-const STORAGE_KEY = 'crmdeep_deals';
-
 export default function DealsPage() {
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
-  // Load deals from localStorage
+  // Load deals from Supabase
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setDeals(JSON.parse(stored));
-    } else {
-      setDeals(DEMO_DEALS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_DEALS));
+    if (currentOrganization) {
+      loadDeals();
     }
-  }, []);
+  }, [currentOrganization]);
 
-  // Save to localStorage whenever deals change
-  useEffect(() => {
-    if (deals.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(deals));
+  const loadDeals = async () => {
+    if (!currentOrganization) return;
+
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading deals:', error);
+        return;
+      }
+
+      setDeals(data || []);
+    } catch (error) {
+      console.error('Error loading deals:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [deals]);
+  };
 
   const stages: { key: DealStage; label: string; color: string }[] = [
     { key: 'lead', label: 'Lead', color: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200' },
@@ -193,17 +119,93 @@ export default function DealsPage() {
     }).format(value);
   };
 
-  const handleDealAdded = (newDeal: Deal) => {
-    setDeals([newDeal, ...deals]);
+  const handleDealAdded = async (newDeal: Omit<Deal, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => {
+    if (!currentOrganization) return;
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('deals')
+        .insert({
+          organization_id: currentOrganization.id,
+          title: newDeal.title,
+          company: newDeal.company,
+          value: newDeal.value,
+          stage: newDeal.stage,
+          probability: newDeal.probability,
+          assignee: newDeal.assignee,
+          assignee_avatar: newDeal.assignee_avatar || '',
+          days_in_stage: newDeal.days_in_stage,
+          contact_person: newDeal.contact_person,
+          tags: newDeal.tags,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating deal:', error);
+        alert('Fırsat oluşturulurken hata oluştu');
+        return;
+      }
+
+      await loadDeals();
+    } catch (error) {
+      console.error('Error creating deal:', error);
+      alert('Fırsat oluşturulurken hata oluştu');
+    }
   };
 
-  const handleDealUpdated = (updatedDeal: Deal) => {
-    setDeals(deals.map(d => d.id === updatedDeal.id ? updatedDeal : d));
+  const handleDealUpdated = async (updatedDeal: Deal) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('deals')
+        .update({
+          title: updatedDeal.title,
+          company: updatedDeal.company,
+          value: updatedDeal.value,
+          stage: updatedDeal.stage,
+          probability: updatedDeal.probability,
+          assignee: updatedDeal.assignee,
+          contact_person: updatedDeal.contact_person,
+          tags: updatedDeal.tags,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', updatedDeal.id);
+
+      if (error) {
+        console.error('Error updating deal:', error);
+        alert('Fırsat güncellenirken hata oluştu');
+        return;
+      }
+
+      await loadDeals();
+    } catch (error) {
+      console.error('Error updating deal:', error);
+      alert('Fırsat güncellenirken hata oluştu');
+    }
   };
 
-  const handleDeleteDeal = (dealId: string) => {
-    if (confirm('Bu fırsatı silmek istediğinizden emin misiniz?')) {
-      setDeals(deals.filter(d => d.id !== dealId));
+  const handleDeleteDeal = async (dealId: string) => {
+    if (!confirm('Bu fırsatı silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('deals')
+        .delete()
+        .eq('id', dealId);
+
+      if (error) {
+        console.error('Error deleting deal:', error);
+        alert('Fırsat silinirken hata oluştu');
+        return;
+      }
+
+      await loadDeals();
+    } catch (error) {
+      console.error('Error deleting deal:', error);
+      alert('Fırsat silinirken hata oluştu');
     }
   };
 
@@ -212,12 +214,29 @@ export default function DealsPage() {
     setIsEditModalOpen(true);
   };
 
-  const handleMoveStage = (dealId: string, newStage: DealStage) => {
-    setDeals(deals.map(d =>
-      d.id === dealId
-        ? { ...d, stage: newStage, daysInStage: 0, updated_at: new Date().toISOString() }
-        : d
-    ));
+  const handleMoveStage = async (dealId: string, newStage: DealStage) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('deals')
+        .update({
+          stage: newStage,
+          days_in_stage: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', dealId);
+
+      if (error) {
+        console.error('Error moving deal stage:', error);
+        alert('Fırsat aşaması değiştirilirken hata oluştu');
+        return;
+      }
+
+      await loadDeals();
+    } catch (error) {
+      console.error('Error moving deal stage:', error);
+      alert('Fırsat aşaması değiştirilirken hata oluştu');
+    }
   };
 
   const totalPipelineValue = deals
@@ -226,6 +245,28 @@ export default function DealsPage() {
   const averageDealSize = deals.length > 0 ? totalPipelineValue / deals.length : 0;
   const totalDeals = deals.filter(d => d.stage !== 'closed_lost' && d.stage !== 'closed_won').length;
   const wonDeals = deals.filter((d) => d.stage === 'closed_won').length;
+
+  // Show loading state
+  if (orgLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-600 dark:text-primary-400" />
+          <p className="mt-4 text-neutral-600 dark:text-neutral-400">Fırsatlar yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentOrganization) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <p className="text-neutral-600 dark:text-neutral-400">Organizasyon bulunamadı</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -378,7 +419,7 @@ export default function DealsPage() {
                             </div>
                             <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                               <User className="h-4 w-4" />
-                              <span className="truncate">{deal.contactPerson}</span>
+                              <span className="truncate">{deal.contact_person}</span>
                             </div>
                           </div>
 
@@ -392,7 +433,7 @@ export default function DealsPage() {
                           <div className="mt-3 flex items-center justify-between">
                             <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
                               <Clock className="h-3 w-3" />
-                              {deal.daysInStage} gün
+                              {deal.days_in_stage} gün
                             </div>
                             <Avatar className="h-6 w-6">
                               <AvatarFallback className="bg-primary-100 dark:bg-primary-900/30 text-xs text-primary-600 dark:text-primary-400">
