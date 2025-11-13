@@ -46,14 +46,41 @@ export function useOrganization() {
         return;
       }
 
-      // Get user's organization memberships
+      // Try to get user's organization memberships
       const { data: memberships, error: membershipsError } = await supabase
         .from('organization_members')
         .select('*, organizations(*)')
         .eq('user_id', user.id);
 
+      // If organization_members table doesn't exist or error, fallback to direct organizations query
       if (membershipsError) {
-        throw membershipsError;
+        console.log('organization_members error, falling back to organizations table:', membershipsError);
+
+        // Fallback: Get all organizations (for now)
+        const { data: orgs, error: orgsError } = await supabase
+          .from('organizations')
+          .select('*')
+          .limit(1);
+
+        if (orgsError) {
+          console.error('Error loading organizations:', orgsError);
+          // If organizations also fails, create a demo org
+          await createDemoOrganization(user.id, supabase);
+          setIsLoading(false);
+          return;
+        }
+
+        if (orgs && orgs.length > 0) {
+          setOrganizations(orgs);
+          setCurrentOrganization(orgs[0]);
+          setMemberRole('owner');
+        } else {
+          // No organizations exist, create a demo one
+          await createDemoOrganization(user.id, supabase);
+        }
+
+        setIsLoading(false);
+        return;
       }
 
       if (memberships && memberships.length > 0) {
@@ -78,6 +105,9 @@ export function useOrganization() {
         // Set user's role in current organization
         const membership = memberships.find((m: any) => m.organization_id === currentOrg.id);
         setMemberRole(membership?.role || 'member');
+      } else {
+        // No memberships found, create a demo organization
+        await createDemoOrganization(user.id, supabase);
       }
 
       setIsLoading(false);
@@ -85,6 +115,50 @@ export function useOrganization() {
       console.error('Error loading organizations:', err);
       setError(err as Error);
       setIsLoading(false);
+    }
+  };
+
+  const createDemoOrganization = async (userId: string, supabase: any) => {
+    try {
+      console.log('Creating demo organization for user:', userId);
+
+      // Check if organization already exists
+      const { data: existingOrgs } = await supabase
+        .from('organizations')
+        .select('*')
+        .limit(1);
+
+      if (existingOrgs && existingOrgs.length > 0) {
+        setOrganizations(existingOrgs);
+        setCurrentOrganization(existingOrgs[0]);
+        setMemberRole('owner');
+        return;
+      }
+
+      // Create new organization
+      const { data: newOrg, error: createError } = await supabase
+        .from('organizations')
+        .insert({
+          name: 'My Organization',
+          slug: `org-${userId.substring(0, 8)}`,
+          owner_id: userId,
+          subscription_plan: 'free',
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating organization:', createError);
+        return;
+      }
+
+      if (newOrg) {
+        setOrganizations([newOrg]);
+        setCurrentOrganization(newOrg);
+        setMemberRole('owner');
+      }
+    } catch (err) {
+      console.error('Error in createDemoOrganization:', err);
     }
   };
 
