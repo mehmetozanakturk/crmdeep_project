@@ -5,11 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Plus,
   TrendingUp,
@@ -21,64 +16,74 @@ import {
   Linkedin,
   Twitter,
   BarChart3,
-  Edit2,
   Trash2,
   Play,
   Pause,
-  X,
 } from 'lucide-react';
-import {
-  loadCampaigns,
-  getCampaignStats,
-  createCampaign,
-  updateCampaign,
-  deleteCampaign,
-  type Campaign,
-} from '@/lib/api/campaigns';
 import { useOrganization } from '@/lib/hooks/useOrganization';
+import { useBrands } from '@/lib/hooks/useBrands';
+import { createClient } from '@/lib/supabase/client';
+import { AddCampaignModal } from '@/components/campaigns/AddCampaignModal';
+
+interface Campaign {
+  id: string;
+  organization_id: string;
+  name: string;
+  platform: 'meta' | 'google' | 'linkedin' | 'twitter' | 'other';
+  status: 'draft' | 'active' | 'paused' | 'completed' | 'archived';
+  campaign_type?: 'awareness' | 'consideration' | 'conversion' | 'remarketing';
+  budget: number;
+  spent: number;
+  currency: string;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  reach: number;
+  start_date: string | null;
+  end_date: string | null;
+  ad_copy?: string | null;
+  call_to_action?: string | null;
+  landing_page_url?: string | null;
+  tags?: string[];
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function CampaignsPage() {
   const { currentOrganization } = useOrganization();
+  const { currentBrand } = useBrands();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [filteredCampaigns, setFilteredCampaigns] = useState<Campaign[]>([]);
   const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
-  const [stats, setStats] = useState({
-    totalBudget: 0,
-    totalSpent: 0,
-    totalImpressions: 0,
-    totalClicks: 0,
-    totalConversions: 0,
-    avgROI: 0,
-    avgCTR: 0,
-    avgCPA: 0,
-    avgCVR: 0,
-  });
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    platform: 'meta' as Campaign['platform'],
-    budget: '',
-    status: 'draft' as Campaign['status'],
-    campaign_type: 'awareness' as Campaign['campaign_type'],
-    ad_copy: '',
-    landing_page_url: '',
-  });
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
-  const loadData = useCallback(async () => {
+  const loadCampaigns = async () => {
     if (!currentOrganization) return;
 
     setIsLoading(true);
-    const [campaignsData, statsData] = await Promise.all([
-      loadCampaigns(currentOrganization.id),
-      getCampaignStats(currentOrganization.id),
-    ]);
-    setCampaigns(campaignsData);
-    setStats(statsData);
-    setIsLoading(false);
-  }, [currentOrganization]);
+    try {
+      const supabase = createClient();
+      let query = supabase
+        .from('campaigns')
+        .select('*')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false });
+
+      // Note: brand_id filtering removed since the table doesn't have this column
+      // If needed in future, add brand_id column to campaigns table first
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setCampaigns(data || []);
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filterCampaigns = useCallback(() => {
     if (selectedPlatform === 'all') {
@@ -90,102 +95,45 @@ export default function CampaignsPage() {
 
   useEffect(() => {
     if (currentOrganization) {
-      loadData();
+      loadCampaigns();
     }
-  }, [currentOrganization, loadData]);
+  }, [currentOrganization]);
 
   useEffect(() => {
     filterCampaigns();
   }, [filterCampaigns]);
 
-  const handleCreateCampaign = async () => {
-    if (!currentOrganization) return;
-    if (!formData.name || !formData.budget) {
-      alert('Please fill in required fields');
-      return;
-    }
-
-    const newCampaign = await createCampaign(currentOrganization.id, {
-      name: formData.name,
-      platform: formData.platform,
-      budget: parseFloat(formData.budget),
-      status: formData.status,
-      campaign_type: formData.campaign_type,
-      ad_copy: formData.ad_copy,
-      landing_page_url: formData.landing_page_url,
-    });
-
-    if (newCampaign) {
-      await loadData();
-      setIsCreateDialogOpen(false);
-      resetForm();
-    }
-  };
-
-  const handleEditCampaign = async () => {
-    if (!editingCampaign) return;
-
-    const updated = await updateCampaign({
-      id: editingCampaign.id,
-      name: formData.name,
-      platform: formData.platform,
-      budget: parseFloat(formData.budget),
-      status: formData.status,
-      campaign_type: formData.campaign_type,
-      ad_copy: formData.ad_copy,
-      landing_page_url: formData.landing_page_url,
-    });
-
-    if (updated) {
-      await loadData();
-      setIsEditDialogOpen(false);
-      setEditingCampaign(null);
-      resetForm();
-    }
-  };
-
   const handleDeleteCampaign = async (id: string) => {
     if (!confirm('Are you sure you want to delete this campaign?')) return;
 
-    const success = await deleteCampaign(id);
-    if (success) {
-      await loadData();
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('campaigns').delete().eq('id', id);
+
+      if (error) throw error;
+      loadCampaigns();
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      alert('Error deleting campaign');
     }
   };
 
   const handleToggleStatus = async (campaign: Campaign) => {
     const newStatus = campaign.status === 'active' ? 'paused' : 'active';
-    await updateCampaign({
-      id: campaign.id,
-      status: newStatus,
-    });
-    await loadData();
-  };
 
-  const openEditDialog = (campaign: Campaign) => {
-    setEditingCampaign(campaign);
-    setFormData({
-      name: campaign.name,
-      platform: campaign.platform,
-      budget: campaign.budget.toString(),
-      status: campaign.status,
-      campaign_type: campaign.campaign_type || 'awareness',
-      ad_copy: campaign.ad_copy || '',
-      landing_page_url: campaign.landing_page_url || '',
-    });
-    setIsEditDialogOpen(true);
-  };
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('campaigns')
+        .update({ status: newStatus })
+        .eq('id', campaign.id);
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      platform: 'meta',
-      budget: '',
-      status: 'draft',
-      campaign_type: 'awareness',
-      ad_copy: '',
-      landing_page_url: '',
-    });
+      if (error) throw error;
+      loadCampaigns();
+    } catch (error) {
+      console.error('Error updating campaign status:', error);
+      alert('Error updating campaign status');
+    }
   };
 
   const getPlatformIcon = (platform: Campaign['platform']) => {
@@ -249,6 +197,20 @@ export default function CampaignsPage() {
     return campaign.spent / campaign.conversions;
   };
 
+  // Calculate stats from campaigns data
+  const stats = {
+    totalBudget: campaigns.reduce((sum, c) => sum + (c.budget || 0), 0),
+    totalSpent: campaigns.reduce((sum, c) => sum + (c.spent || 0), 0),
+    totalImpressions: campaigns.reduce((sum, c) => sum + (c.impressions || 0), 0),
+    totalClicks: campaigns.reduce((sum, c) => sum + (c.clicks || 0), 0),
+    totalConversions: campaigns.reduce((sum, c) => sum + (c.conversions || 0), 0),
+  };
+
+  const avgCTR = stats.totalImpressions > 0 ? (stats.totalClicks / stats.totalImpressions) * 100 : 0;
+  const avgCPA = stats.totalConversions > 0 ? stats.totalSpent / stats.totalConversions : 0;
+  const avgCVR = stats.totalClicks > 0 ? (stats.totalConversions / stats.totalClicks) * 100 : 0;
+  const avgROI = stats.totalSpent > 0 ? ((stats.totalConversions * 50 - stats.totalSpent) / stats.totalSpent) * 100 : 0;
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -272,7 +234,7 @@ export default function CampaignsPage() {
             Manage your advertising campaigns across platforms
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => setAddModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           New Campaign
         </Button>
@@ -303,7 +265,7 @@ export default function CampaignsPage() {
               <div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">Avg ROI</p>
                 <p className="mt-1 text-2xl font-bold text-success-600 dark:text-success-400">
-                  {stats.avgROI.toFixed(1)}%
+                  {avgROI.toFixed(1)}%
                 </p>
                 <p className="text-xs text-neutral-500 mt-1 flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
@@ -323,7 +285,7 @@ export default function CampaignsPage() {
                 <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {formatNumber(stats.totalClicks)}
                 </p>
-                <p className="text-xs text-neutral-500 mt-1">{stats.avgCTR.toFixed(2)}% CTR</p>
+                <p className="text-xs text-neutral-500 mt-1">{avgCTR.toFixed(2)}% CTR</p>
               </div>
               <MousePointerClick className="h-8 w-8 text-primary-600" />
             </div>
@@ -338,7 +300,7 @@ export default function CampaignsPage() {
                 <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   {formatNumber(stats.totalConversions)}
                 </p>
-                <p className="text-xs text-neutral-500 mt-1">{stats.avgCVR.toFixed(2)}% CVR</p>
+                <p className="text-xs text-neutral-500 mt-1">{avgCVR.toFixed(2)}% CVR</p>
               </div>
               <Target className="h-8 w-8 text-success-600" />
             </div>
@@ -359,8 +321,11 @@ export default function CampaignsPage() {
 
         <TabsContent value={selectedPlatform} className="space-y-4 mt-6">
           {isLoading ? (
-            <div className="text-center py-12">
-              <p className="text-neutral-600 dark:text-neutral-400">Loading campaigns...</p>
+            <div className="flex justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                <p className="mt-4 text-neutral-600 dark:text-neutral-400">Loading campaigns...</p>
+              </div>
             </div>
           ) : filteredCampaigns.length === 0 ? (
             <Card className="border-neutral-200 dark:border-neutral-700">
@@ -372,7 +337,7 @@ export default function CampaignsPage() {
                 <p className="text-neutral-600 dark:text-neutral-400 mb-4">
                   Create your first campaign to start tracking performance
                 </p>
-                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Button onClick={() => setAddModalOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Campaign
                 </Button>
@@ -421,14 +386,6 @@ export default function CampaignsPage() {
                             ) : (
                               <Play className="h-4 w-4" />
                             )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(campaign)}
-                            title="Edit"
-                          >
-                            <Edit2 className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -506,242 +463,11 @@ export default function CampaignsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Create Campaign Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Campaign</DialogTitle>
-            <DialogDescription>
-              Set up a new advertising campaign
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Campaign Name *</Label>
-              <Input
-                id="name"
-                placeholder="e.g., Summer Sale 2024"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="platform">Platform *</Label>
-                <Select
-                  value={formData.platform}
-                  onValueChange={(value: Campaign['platform']) => setFormData({ ...formData, platform: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="meta">Meta Ads (Facebook/Instagram)</SelectItem>
-                    <SelectItem value="google">Google Ads</SelectItem>
-                    <SelectItem value="linkedin">LinkedIn Ads</SelectItem>
-                    <SelectItem value="twitter">Twitter Ads</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="budget">Budget (USD) *</Label>
-                <Input
-                  id="budget"
-                  type="number"
-                  placeholder="1000"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: Campaign['status']) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="campaign_type">Campaign Type</Label>
-                <Select
-                  value={formData.campaign_type}
-                  onValueChange={(value) => setFormData({ ...formData, campaign_type: value as Campaign['campaign_type'] })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="awareness">Awareness</SelectItem>
-                    <SelectItem value="consideration">Consideration</SelectItem>
-                    <SelectItem value="conversion">Conversion</SelectItem>
-                    <SelectItem value="remarketing">Remarketing</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="ad_copy">Ad Copy</Label>
-              <Textarea
-                id="ad_copy"
-                placeholder="Write your ad copy here..."
-                value={formData.ad_copy}
-                onChange={(e) => setFormData({ ...formData, ad_copy: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="landing_page_url">Landing Page URL</Label>
-              <Input
-                id="landing_page_url"
-                type="url"
-                placeholder="https://example.com/landing"
-                value={formData.landing_page_url}
-                onChange={(e) => setFormData({ ...formData, landing_page_url: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCampaign}>Create Campaign</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Campaign Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Campaign</DialogTitle>
-            <DialogDescription>
-              Update campaign details
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Campaign Name *</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-platform">Platform *</Label>
-                <Select
-                  value={formData.platform}
-                  onValueChange={(value: Campaign['platform']) => setFormData({ ...formData, platform: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="meta">Meta Ads</SelectItem>
-                    <SelectItem value="google">Google Ads</SelectItem>
-                    <SelectItem value="linkedin">LinkedIn Ads</SelectItem>
-                    <SelectItem value="twitter">Twitter Ads</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-budget">Budget (USD) *</Label>
-                <Input
-                  id="edit-budget"
-                  type="number"
-                  value={formData.budget}
-                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: Campaign['status']) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-campaign_type">Campaign Type</Label>
-                <Select
-                  value={formData.campaign_type}
-                  onValueChange={(value) => setFormData({ ...formData, campaign_type: value as Campaign['campaign_type'] })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="awareness">Awareness</SelectItem>
-                    <SelectItem value="consideration">Consideration</SelectItem>
-                    <SelectItem value="conversion">Conversion</SelectItem>
-                    <SelectItem value="remarketing">Remarketing</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-ad_copy">Ad Copy</Label>
-              <Textarea
-                id="edit-ad_copy"
-                value={formData.ad_copy}
-                onChange={(e) => setFormData({ ...formData, ad_copy: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-landing_page_url">Landing Page URL</Label>
-              <Input
-                id="edit-landing_page_url"
-                type="url"
-                value={formData.landing_page_url}
-                onChange={(e) => setFormData({ ...formData, landing_page_url: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditCampaign}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddCampaignModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        onCampaignAdded={loadCampaigns}
+      />
     </div>
   );
 }

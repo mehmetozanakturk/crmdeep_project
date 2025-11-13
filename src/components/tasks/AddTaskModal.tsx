@@ -43,9 +43,10 @@ interface AddTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTaskAdded: (task: Task) => void;
+  initialProject?: string;
 }
 
-export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalProps) {
+export function AddTaskModal({ open, onOpenChange, onTaskAdded, initialProject }: AddTaskModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -61,7 +62,15 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalPr
     defaultValues: {
       status: 'todo',
       priority: 'medium',
+      project: initialProject || '',
     },
+  });
+
+  // Update project field when initialProject changes
+  useState(() => {
+    if (initialProject) {
+      setValue('project', initialProject);
+    }
   });
 
   const statusValue = watch('status');

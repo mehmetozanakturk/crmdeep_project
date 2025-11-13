@@ -13,6 +13,10 @@ import {
   Calendar,
   ArrowUp,
   ArrowDown,
+  Eye,
+  MousePointer,
+  ShoppingCart,
+  BarChart3,
 } from 'lucide-react';
 
 const REVENUE_DATA = [
@@ -45,6 +49,43 @@ const RECENT_ACTIVITIES = [
   { type: 'email', title: 'Email kampanyası gönderildi', detail: '250 alıcı', time: '5 saat önce' },
   { type: 'meeting', title: 'Toplantı tamamlandı', detail: 'GreenLife stratejisi', time: '1 gün önce' },
 ];
+
+// Platform Analytics Data
+const META_ANALYTICS = {
+  impressions: 145820,
+  reach: 98540,
+  clicks: 4234,
+  ctr: 2.9,
+  conversions: 187,
+  spend: 12450,
+  cpc: 2.94,
+  cpm: 85.4,
+  roas: 4.2,
+};
+
+const GOOGLE_ANALYTICS = {
+  impressions: 234560,
+  clicks: 8932,
+  ctr: 3.8,
+  conversions: 312,
+  spend: 18750,
+  cpc: 2.1,
+  conversionRate: 3.5,
+  avgPosition: 2.4,
+  qualityScore: 8.2,
+};
+
+const AMAZON_ANALYTICS = {
+  sales: 45680,
+  orders: 892,
+  units: 1543,
+  avgOrderValue: 51.2,
+  acos: 18.5,
+  roas: 5.4,
+  impressions: 189340,
+  clicks: 5234,
+  conversionRate: 17.0,
+};
 
 export default function AnalyticsPage() {
   const maxRevenue = Math.max(...REVENUE_DATA.map((d) => d.value));
@@ -350,6 +391,179 @@ export default function AnalyticsPage() {
               <div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">Toplantı Tamamlama</p>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">91.2%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Platform Analytics Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Platform Analitiği</h2>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Büyük platformlardaki performansınız</p>
+        </div>
+
+        {/* Meta (Facebook & Instagram) Analytics */}
+        <Card className="border-neutral-200 dark:border-neutral-700 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-2">
+                <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+              </div>
+              <div>
+                <CardTitle className="text-neutral-900 dark:text-neutral-100">Meta Ads (Facebook & Instagram)</CardTitle>
+                <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                  Sosyal medya kampanya performansı
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Gösterimler</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{META_ANALYTICS.impressions.toLocaleString()}</p>
+                <p className="text-xs text-neutral-500">Erişim: {META_ANALYTICS.reach.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <MousePointer className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Tıklamalar</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{META_ANALYTICS.clicks.toLocaleString()}</p>
+                <p className="text-xs text-neutral-500">CTR: {META_ANALYTICS.ctr}%</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Dönüşümler</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{META_ANALYTICS.conversions}</p>
+                <p className="text-xs text-neutral-500">ROAS: {META_ANALYTICS.roas}x</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Harcama</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">₺{META_ANALYTICS.spend.toLocaleString()}</p>
+                <p className="text-xs text-neutral-500">CPC: ₺{META_ANALYTICS.cpc} | CPM: ₺{META_ANALYTICS.cpm}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Google Ads Analytics */}
+        <Card className="border-neutral-200 dark:border-neutral-700 bg-gradient-to-br from-red-50 to-yellow-50 dark:from-red-950/20 dark:to-yellow-950/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-gradient-to-br from-red-500 via-yellow-500 to-green-500 p-2">
+                <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
+                </svg>
+              </div>
+              <div>
+                <CardTitle className="text-neutral-900 dark:text-neutral-100">Google Ads</CardTitle>
+                <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                  Arama ve display reklam performansı
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Gösterimler</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{GOOGLE_ANALYTICS.impressions.toLocaleString()}</p>
+                <p className="text-xs text-neutral-500">Ort. Konum: {GOOGLE_ANALYTICS.avgPosition}</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <MousePointer className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Tıklamalar</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{GOOGLE_ANALYTICS.clicks.toLocaleString()}</p>
+                <p className="text-xs text-neutral-500">CTR: {GOOGLE_ANALYTICS.ctr}%</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Dönüşümler</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{GOOGLE_ANALYTICS.conversions}</p>
+                <p className="text-xs text-neutral-500">Oran: {GOOGLE_ANALYTICS.conversionRate}% | Kalite: {GOOGLE_ANALYTICS.qualityScore}/10</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Harcama</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">₺{GOOGLE_ANALYTICS.spend.toLocaleString()}</p>
+                <p className="text-xs text-neutral-500">CPC: ₺{GOOGLE_ANALYTICS.cpc}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Amazon Analytics */}
+        <Card className="border-neutral-200 dark:border-neutral-700 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 p-2">
+                <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M.045 18.02c.072-.116.187-.124.348-.022 3.636 2.11 7.594 3.166 11.87 3.166 2.852 0 5.668-.533 8.447-1.595l.315-.14c.138-.06.234-.1.293-.13.226-.088.39-.046.525.13.12.174.09.336-.12.48-.256.19-.6.41-1.006.654-1.244.743-2.64 1.316-4.185 1.726-1.53.406-3.045.61-4.516.61-2.265 0-4.446-.433-6.543-1.297-2.096-.865-3.87-2.098-5.323-3.7-.184-.203-.226-.36-.11-.525zm3.533-4.836c-.138.116-.3.088-.48-.09l-.12-.12c-.184-.184-.226-.375-.135-.585.16-.315.45-.57.87-.78.42-.21.87-.315 1.35-.315.51 0 .975.12 1.394.36.42.24.615.57.615.99 0 .36-.12.66-.36.87-.24.225-.54.336-.87.336-.48 0-.84-.18-1.08-.54l-.015-.03c-.044-.06-.074-.074-.09-.03l-.045.09c-.03.09-.074.18-.135.27zm8.055 0c-.135.116-.3.088-.48-.09l-.12-.12c-.184-.184-.226-.375-.135-.585.16-.315.45-.57.87-.78.42-.21.87-.315 1.35-.315.51 0 .975.12 1.394.36.42.24.615.57.615.99 0 .36-.12.66-.36.87-.24.225-.54.336-.87.336-.48 0-.84-.18-1.08-.54l-.015-.03c-.044-.06-.074-.074-.09-.03l-.045.09c-.03.09-.074.18-.135.27z"/>
+                </svg>
+              </div>
+              <div>
+                <CardTitle className="text-neutral-900 dark:text-neutral-100">Amazon</CardTitle>
+                <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                  E-ticaret ve marketplace performansı
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Satışlar</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">₺{AMAZON_ANALYTICS.sales.toLocaleString()}</p>
+                <p className="text-xs text-neutral-500">{AMAZON_ANALYTICS.orders} sipariş | {AMAZON_ANALYTICS.units} ürün</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Ort. Sepet</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">₺{AMAZON_ANALYTICS.avgOrderValue}</p>
+                <p className="text-xs text-neutral-500">Dönüşüm: {AMAZON_ANALYTICS.conversionRate}%</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">ACOS</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{AMAZON_ANALYTICS.acos}%</p>
+                <p className="text-xs text-neutral-500">ROAS: {AMAZON_ANALYTICS.roas}x</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Görüntülenmeler</p>
+                </div>
+                <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{AMAZON_ANALYTICS.impressions.toLocaleString()}</p>
+                <p className="text-xs text-neutral-500">{AMAZON_ANALYTICS.clicks.toLocaleString()} tıklama</p>
               </div>
             </div>
           </CardContent>

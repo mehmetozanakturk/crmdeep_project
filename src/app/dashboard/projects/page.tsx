@@ -30,9 +30,11 @@ import {
   Trash2,
   BarChart3,
   DollarSign,
+  CheckSquare,
 } from 'lucide-react';
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { EditProjectModal } from '@/components/projects/EditProjectModal';
+import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 import {
   loadProjects,
   deleteProject,
@@ -49,6 +51,8 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [taskCounts, setTaskCounts] = useState<Record<string, { total: number; completed: number }>>({});
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedProjectForTask, setSelectedProjectForTask] = useState<string>('');
 
   // Load projects on mount
   useEffect(() => {
@@ -106,6 +110,16 @@ export default function ProjectsPage() {
   const handleEditProject = (project: Project) => {
     setSelectedProject(project);
     setEditModalOpen(true);
+  };
+
+  const handleCreateTask = (projectName: string) => {
+    setSelectedProjectForTask(projectName);
+    setIsTaskModalOpen(true);
+  };
+
+  const handleTaskAdded = async (task: any) => {
+    // Refresh the project list to update task counts
+    await loadProjectsData();
   };
 
   const filteredProjects = projects.filter((project) =>
@@ -315,6 +329,10 @@ export default function ProjectsPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleCreateTask(project.name)}>
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        Görev Oluştur
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleEditProject(project)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Düzenle
@@ -464,6 +482,14 @@ export default function ProjectsPage() {
           onProjectUpdated={handleProjectUpdated}
         />
       )}
+
+      {/* Add Task Modal */}
+      <AddTaskModal
+        open={isTaskModalOpen}
+        onOpenChange={setIsTaskModalOpen}
+        onTaskAdded={handleTaskAdded}
+        initialProject={selectedProjectForTask}
+      />
     </div>
   );
 }

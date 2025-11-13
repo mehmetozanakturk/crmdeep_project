@@ -46,9 +46,10 @@ interface AddProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onProjectAdded: () => void;
+  initialClient?: string;
 }
 
-export function AddProjectModal({ open, onOpenChange, onProjectAdded }: AddProjectModalProps) {
+export function AddProjectModal({ open, onOpenChange, onProjectAdded, initialClient }: AddProjectModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -63,7 +64,15 @@ export function AddProjectModal({ open, onOpenChange, onProjectAdded }: AddProje
     defaultValues: {
       status: 'active',
       progress: '0',
+      client: initialClient || '',
     },
+  });
+
+  // Update client field when initialClient changes
+  useState(() => {
+    if (initialClient) {
+      setValue('client', initialClient);
+    }
   });
 
   const statusValue = watch('status');

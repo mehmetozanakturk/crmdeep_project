@@ -28,10 +28,12 @@ import {
   Trash2,
   X,
   Loader2,
+  FolderPlus,
 } from 'lucide-react';
 import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
 import { EditCompanyModal } from '@/components/companies/EditCompanyModal';
 import { CompanyDetailModal } from '@/components/companies/CompanyDetailModal';
+import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { createClient } from '@/lib/supabase/client';
 
@@ -283,7 +285,9 @@ export default function CompaniesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedCompanyForProject, setSelectedCompanyForProject] = useState<string>('');
   const [companies, setCompanies] = useState<Company[]>([]);
 
   const loadCompanies = useCallback(async () => {
@@ -435,6 +439,11 @@ export default function CompaniesPage() {
     setSelectedCompany(company);
     setIsDetailModalOpen(false);
     setIsEditModalOpen(true);
+  };
+
+  const handleCreateProject = (company: Company) => {
+    setSelectedCompanyForProject(company.name);
+    setIsProjectModalOpen(true);
   };
 
   const activeCount = companies.filter(c => c.status === 'active').length;
@@ -607,6 +616,10 @@ export default function CompaniesPage() {
                         <Pencil className="mr-2 h-4 w-4" />
                         Düzenle
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCreateProject(company)}>
+                        <FolderPlus className="mr-2 h-4 w-4" />
+                        Proje Oluştur
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => handleDeleteCompany(company.id)}
@@ -703,6 +716,14 @@ export default function CompaniesPage() {
           onCompanyUpdated={handleCompanyUpdated}
         />
       )}
+
+      {/* Add Project Modal */}
+      <AddProjectModal
+        open={isProjectModalOpen}
+        onOpenChange={setIsProjectModalOpen}
+        onProjectAdded={loadCompanies}
+        initialClient={selectedCompanyForProject}
+      />
     </div>
   );
 }
