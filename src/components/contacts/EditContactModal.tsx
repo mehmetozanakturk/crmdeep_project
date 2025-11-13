@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { type Contact } from '@/lib/api/contacts';
+import { type Contact } from '@/app/dashboard/contacts/page';
 import {
   Dialog,
   DialogContent,
@@ -94,12 +94,12 @@ export function EditContactModal({ open, onOpenChange, contact, onContactUpdated
         phone: data.phone,
         company_name: data.company,
         position: data.position || null,
-        status: data.status as Contact['status'],
+        status: data.status,
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
         updated_at: new Date().toISOString(),
       };
 
-      onContactUpdated(updatedContact);
+      await onContactUpdated(updatedContact);
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating contact:', error);

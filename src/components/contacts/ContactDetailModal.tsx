@@ -5,26 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { type Contact } from '@/lib/api/contacts';
+import { type Contact } from '@/app/dashboard/contacts/page';
 import {
   User,
   Mail,
   Phone,
   Building2,
-  MapPin,
-  Calendar,
   Briefcase,
-  Linkedin,
-  Twitter,
-  FileText,
-  ListTodo,
-  CalendarDays,
   Edit,
   Trash2,
-  Plus,
-  Cake,
-  Star,
-  AlertCircle,
 } from 'lucide-react';
 
 interface ContactDetailModalProps {
@@ -34,19 +23,6 @@ interface ContactDetailModalProps {
   onEdit: (contact: Contact) => void;
   onDelete: (contactId: string) => void;
 }
-
-const getPriorityInfo = (priority: Contact['priority']) => {
-  switch (priority) {
-    case 'critical':
-      return { label: 'Kritik', color: 'bg-red-500 dark:bg-red-600' };
-    case 'high':
-      return { label: 'Yüksek', color: 'bg-orange-500 dark:bg-orange-600' };
-    case 'medium':
-      return { label: 'Orta', color: 'bg-yellow-500 dark:bg-yellow-600' };
-    case 'low':
-      return { label: 'Düşük', color: 'bg-green-500 dark:bg-green-600' };
-  }
-};
 
 const getStatusInfo = (status: Contact['status']) => {
   switch (status) {

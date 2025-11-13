@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createContact, type Contact } from '@/lib/api/contacts';
+import { type Contact } from '@/app/dashboard/contacts/page';
 import {
   Dialog,
   DialogContent,
@@ -52,40 +52,18 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
     setIsSubmitting(true);
 
     try {
-      // Create new contact with localStorage (no Supabase for now)
-      const newContact: Contact = {
-        id: Date.now().toString(),
+      const newContact = {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        company_id: null,
         company_name: data.company,
         position: data.position || null,
         status: 'active',
         tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
         avatar_url: null,
-        linkedin_url: null,
-        twitter_url: null,
-        address: null,
-        city: null,
-        state: null,
-        country: null,
-        notes: null,
-        last_contact_date: null,
-        organization_id: organizationId,
-        created_by: 'demo',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        relatedTasks: [],
-        relatedNotes: [],
-        relatedEvents: [],
-        priority: 'medium',
-        birthday: null,
-        department: null,
-        is_key_contact: false,
       };
 
-      onContactAdded(newContact);
+      await onContactAdded(newContact as any);
       reset();
       onOpenChange(false);
     } catch (error) {

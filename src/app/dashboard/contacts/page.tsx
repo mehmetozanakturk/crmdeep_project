@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { type Contact } from '@/lib/api/contacts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,210 +27,73 @@ import {
   Pencil,
   Trash2,
   X,
+  Loader2,
 } from 'lucide-react';
 import { AddContactModal } from '@/components/contacts/AddContactModal';
 import { EditContactModal } from '@/components/contacts/EditContactModal';
 import { ContactDetailModal } from '@/components/contacts/ContactDetailModal';
+import { useOrganization } from '@/lib/hooks/useOrganization';
+import { createClient } from '@/lib/supabase/client';
 
-// Demo contacts data
-const DEMO_CONTACTS: Contact[] = [
-  {
-    id: '1',
-    name: 'Ahmet Yılmaz',
-    email: 'ahmet@example.com',
-    phone: '+90 532 123 4567',
-    position: 'CEO',
-    company_id: null,
-    company_name: 'TechCorp',
-    status: 'client',
-    tags: ['VIP', 'Tech'],
-    avatar_url: null,
-    linkedin_url: 'https://linkedin.com/in/ahmetyilmaz',
-    twitter_url: null,
-    address: 'Levent Mah. Teknoloji Cad. No:15',
-    city: 'İstanbul',
-    state: null,
-    country: 'Türkiye',
-    notes: 'Uzun süredir çalıştığımız önemli bir müşteri. Her ayın ilk haftasında rutin toplantı yapılıyor.',
-    last_contact_date: new Date().toISOString(),
-    organization_id: 'demo',
-    created_by: 'demo',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    relatedTasks: [],
-    relatedNotes: [],
-    relatedEvents: [],
-    priority: 'high',
-    birthday: '1985-05-15',
-    department: 'Yönetim',
-    is_key_contact: true,
-  },
-  {
-    id: '2',
-    name: 'Zeynep Kaya',
-    email: 'zeynep@example.com',
-    phone: '+90 533 234 5678',
-    position: 'Marketing Manager',
-    company_id: null,
-    company_name: 'Digital Agency',
-    status: 'lead',
-    tags: ['Marketing'],
-    avatar_url: null,
-    linkedin_url: null,
-    twitter_url: null,
-    address: null,
-    city: 'Ankara',
-    state: null,
-    country: 'Türkiye',
-    notes: 'Yeni lead, pazarlama stratejisi konusunda görüşme talep etti.',
-    last_contact_date: null,
-    organization_id: 'demo',
-    created_by: 'demo',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    relatedTasks: [],
-    relatedNotes: [],
-    relatedEvents: [],
-    priority: 'medium',
-    birthday: null,
-    department: 'Pazarlama',
-    is_key_contact: false,
-  },
-  {
-    id: '3',
-    name: 'Mehmet Demir',
-    email: 'mehmet@example.com',
-    phone: '+90 534 345 6789',
-    position: 'CTO',
-    company_id: null,
-    company_name: 'StartupHub',
-    status: 'vip',
-    tags: ['VIP', 'Tech', 'Startup'],
-    avatar_url: null,
-    linkedin_url: 'https://linkedin.com/in/mehmetdemir',
-    twitter_url: 'https://twitter.com/mdemir',
-    address: null,
-    city: 'İzmir',
-    state: null,
-    country: 'Türkiye',
-    notes: 'VIP müşteri, teknoloji ortağımız. Aylık inovasyon toplantıları yapılıyor.',
-    last_contact_date: new Date().toISOString(),
-    organization_id: 'demo',
-    created_by: 'demo',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    relatedTasks: [],
-    relatedNotes: [],
-    relatedEvents: [],
-    priority: 'critical',
-    birthday: '1990-03-22',
-    department: 'Teknoloji',
-    is_key_contact: true,
-  },
-  {
-    id: '4',
-    name: 'Ayşe Şahin',
-    email: 'ayse@example.com',
-    phone: '+90 535 456 7890',
-    position: 'Product Manager',
-    company_id: null,
-    company_name: 'InnovateLab',
-    status: 'prospect',
-    tags: ['Product', 'Innovation'],
-    avatar_url: null,
-    linkedin_url: null,
-    twitter_url: null,
-    address: null,
-    city: 'Bursa',
-    state: null,
-    country: 'Türkiye',
-    notes: null,
-    last_contact_date: null,
-    organization_id: 'demo',
-    created_by: 'demo',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    relatedTasks: [],
-    relatedNotes: [],
-    relatedEvents: [],
-    priority: 'low',
-    birthday: null,
-    department: 'Ürün',
-    is_key_contact: false,
-  },
-  {
-    id: '5',
-    name: 'Can Öztürk',
-    email: 'can@example.com',
-    phone: '+90 536 567 8901',
-    position: 'Sales Director',
-    company_id: null,
-    company_name: 'SalesCorp',
-    status: 'active',
-    tags: ['Sales', 'Enterprise'],
-    avatar_url: null,
-    linkedin_url: null,
-    twitter_url: null,
-    address: null,
-    city: 'Antalya',
-    state: null,
-    country: 'Türkiye',
-    notes: 'Aktif müşteri, satış partneri.',
-    last_contact_date: '2024-02-01',
-    organization_id: 'demo',
-    created_by: 'demo',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    relatedTasks: [],
-    relatedNotes: [],
-    relatedEvents: [],
-    priority: 'high',
-    birthday: '1988-11-10',
-    department: 'Satış',
-    is_key_contact: true,
-  },
-];
-
-const STORAGE_KEY = 'crmdeep_contacts';
+// Simplified Contact interface to match database schema
+export interface Contact {
+  id: string;
+  organization_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  position: string | null;
+  company_name: string | null;
+  status: string;
+  tags: string[];
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function ContactsPage() {
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
 
-  // Load contacts from localStorage
+  // Load contacts from Supabase
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const loadedContacts = JSON.parse(stored);
-      // Migrate old data to include new fields
-      const migratedContacts = loadedContacts.map((contact: any) => ({
-        ...contact,
-        relatedTasks: contact.relatedTasks || [],
-        relatedNotes: contact.relatedNotes || [],
-        relatedEvents: contact.relatedEvents || [],
-        priority: contact.priority || 'medium',
-        birthday: contact.birthday || null,
-        department: contact.department || null,
-        is_key_contact: contact.is_key_contact || false,
-      }));
-      setContacts(migratedContacts);
-    } else {
-      setContacts(DEMO_CONTACTS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_CONTACTS));
+    if (currentOrganization) {
+      loadContacts();
     }
-  }, []);
+  }, [currentOrganization]);
 
-  // Save to localStorage whenever contacts change
-  useEffect(() => {
-    if (contacts.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
+  const loadContacts = async () => {
+    if (!currentOrganization) return;
+
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading contacts:', error);
+        return;
+      }
+
+      setContacts(data || []);
+    } catch (error) {
+      console.error('Error loading contacts:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [contacts]);
+  };
 
   const filteredContacts = contacts.filter((contact) => {
     const matchesSearch =
@@ -244,28 +106,89 @@ export default function ContactsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleContactAdded = (newContact: Contact) => {
-    // Add default values for new fields if missing
-    const contactWithDefaults: Contact = {
-      ...newContact,
-      relatedTasks: newContact.relatedTasks || [],
-      relatedNotes: newContact.relatedNotes || [],
-      relatedEvents: newContact.relatedEvents || [],
-      priority: newContact.priority || 'medium',
-      birthday: newContact.birthday || null,
-      department: newContact.department || null,
-      is_key_contact: newContact.is_key_contact || false,
-    };
-    setContacts([contactWithDefaults, ...contacts]);
+  const handleContactAdded = async (newContact: Omit<Contact, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => {
+    if (!currentOrganization) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('contacts')
+        .insert({
+          organization_id: currentOrganization.id,
+          name: newContact.name,
+          email: newContact.email,
+          phone: newContact.phone,
+          position: newContact.position,
+          company_name: newContact.company_name,
+          status: newContact.status,
+          tags: newContact.tags,
+          avatar_url: newContact.avatar_url,
+        });
+
+      if (error) {
+        console.error('Error creating contact:', error);
+        alert('Kişi oluşturulurken hata oluştu');
+        return;
+      }
+
+      await loadContacts();
+    } catch (error) {
+      console.error('Error creating contact:', error);
+      alert('Kişi oluşturulurken hata oluştu');
+    }
   };
 
-  const handleContactUpdated = (updatedContact: Contact) => {
-    setContacts(contacts.map(c => c.id === updatedContact.id ? updatedContact : c));
+  const handleContactUpdated = async (updatedContact: Contact) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('contacts')
+        .update({
+          name: updatedContact.name,
+          email: updatedContact.email,
+          phone: updatedContact.phone,
+          position: updatedContact.position,
+          company_name: updatedContact.company_name,
+          status: updatedContact.status,
+          tags: updatedContact.tags,
+          avatar_url: updatedContact.avatar_url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', updatedContact.id);
+
+      if (error) {
+        console.error('Error updating contact:', error);
+        alert('Kişi güncellenirken hata oluştu');
+        return;
+      }
+
+      await loadContacts();
+    } catch (error) {
+      console.error('Error updating contact:', error);
+      alert('Kişi güncellenirken hata oluştu');
+    }
   };
 
-  const handleDeleteContact = (contactId: string) => {
-    if (confirm('Bu kişiyi silmek istediğinizden emin misiniz?')) {
-      setContacts(contacts.filter(c => c.id !== contactId));
+  const handleDeleteContact = async (contactId: string) => {
+    if (!confirm('Bu kişiyi silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('contacts')
+        .delete()
+        .eq('id', contactId);
+
+      if (error) {
+        console.error('Error deleting contact:', error);
+        alert('Kişi silinirken hata oluştu');
+        return;
+      }
+
+      await loadContacts();
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      alert('Kişi silinirken hata oluştu');
     }
   };
 
@@ -299,6 +222,28 @@ export default function ContactsPage() {
     { label: 'Potansiyel', value: 'prospect' },
     { label: 'VIP', value: 'vip' },
   ];
+
+  // Show loading state
+  if (orgLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-600 dark:text-primary-400" />
+          <p className="mt-4 text-neutral-600 dark:text-neutral-400">Kişiler yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentOrganization) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <p className="text-neutral-600 dark:text-neutral-400">Organizasyon bulunamadı</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -512,7 +457,7 @@ export default function ContactsPage() {
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onContactAdded={handleContactAdded}
-        organizationId="demo"
+        organizationId={currentOrganization.id}
       />
 
       {/* Detail Contact Modal */}
