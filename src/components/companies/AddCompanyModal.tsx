@@ -19,6 +19,7 @@ import { Loader2 } from 'lucide-react';
 import { TagSelector } from '@/components/ui/tag-selector';
 import { type Company } from '@/app/dashboard/companies/page';
 import { useOrganization } from '@/lib/hooks/useOrganization';
+import { useBrands } from '@/lib/hooks/useBrands';
 import { createClient } from '@/lib/supabase/client';
 
 const companySchema = z.object({
@@ -42,6 +43,7 @@ interface AddCompanyModalProps {
 
 export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompanyModalProps) {
   const { currentOrganization } = useOrganization();
+  const { currentBrand } = useBrands();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
         .from('companies')
         .insert({
           organization_id: currentOrganization.id,
+          brand_id: currentBrand?.id || null,
           name: data.name,
           industry: data.industry,
           size: data.size,

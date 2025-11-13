@@ -62,7 +62,7 @@ export function Header({ onMobileSidebarToggle }: HeaderProps) {
           </Link>
 
           {/* Brand Switcher */}
-          <div className="hidden lg:block">
+          <div className="hidden md:block">
             <BrandSwitcher />
           </div>
 

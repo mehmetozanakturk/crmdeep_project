@@ -17,7 +17,7 @@ interface Member {
   id: string;
   user_id: string;
   role: string;
-  full_name: string;
+  full_name: string | null;
   email: string;
 }
 
