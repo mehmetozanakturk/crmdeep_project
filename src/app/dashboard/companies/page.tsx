@@ -27,52 +27,36 @@ import {
   Pencil,
   Trash2,
   X,
+  Loader2,
 } from 'lucide-react';
 import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
 import { EditCompanyModal } from '@/components/companies/EditCompanyModal';
 import { CompanyDetailModal } from '@/components/companies/CompanyDetailModal';
+import { useOrganization } from '@/lib/hooks/useOrganization';
+import { createClient } from '@/lib/supabase/client';
 
-interface Project {
+// Simplified Company interface to match database schema
+export interface Company {
   id: string;
-  title: string;
-  description: string;
-  status: 'planned' | 'in_progress' | 'completed' | 'on_hold';
-  start_date: string;
-  end_date?: string;
-  budget?: string;
-  progress: number; // 0-100
-}
-
-interface Company {
-  id: string;
+  organization_id: string;
   name: string;
-  logo?: string;
-  industry: string;
-  size: string;
-  revenue: string;
-  location: string;
-  website: string;
-  email: string;
-  phone: string;
+  logo: string | null;
+  industry: string | null;
+  size: string | null;
+  revenue: string | null;
+  location: string | null;
+  website: string | null;
+  email: string | null;
+  phone: string | null;
   contacts: number;
   deals: number;
-  status: 'active' | 'prospect' | 'inactive';
+  status: string;
   tags: string[];
   created_at: string;
   updated_at: string;
-  // New fields for enhanced functionality
-  projects: Project[];
-  agreement_date?: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  relatedTasks: string[];
-  relatedNotes: string[];
-  relatedEvents: string[];
-  last_activity_date?: string;
-  total_revenue?: string;
-  description?: string;
 }
 
-const DEMO_COMPANIES: Company[] = [
+const DEMO_COMPANIES_REMOVED = [
   {
     id: '1',
     name: 'TechCorp Solutions',
@@ -271,48 +255,49 @@ const DEMO_COMPANIES: Company[] = [
   },
 ];
 
-const STORAGE_KEY = 'crmdeep_companies';
-
 export default function CompaniesPage() {
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
 
-  // Load companies from localStorage
+  // Load companies from Supabase
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const loadedCompanies = JSON.parse(stored);
-      // Migrate old data to include new fields
-      const migratedCompanies = loadedCompanies.map((company: any) => ({
-        ...company,
-        projects: company.projects || [],
-        agreement_date: company.agreement_date || undefined,
-        priority: company.priority || 'medium',
-        relatedTasks: company.relatedTasks || [],
-        relatedNotes: company.relatedNotes || [],
-        relatedEvents: company.relatedEvents || [],
-        last_activity_date: company.last_activity_date || company.updated_at,
-        total_revenue: company.total_revenue || undefined,
-        description: company.description || undefined,
-      }));
-      setCompanies(migratedCompanies);
-    } else {
-      setCompanies(DEMO_COMPANIES);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEMO_COMPANIES));
+    if (currentOrganization) {
+      loadCompanies();
     }
-  }, []);
+  }, [currentOrganization]);
 
-  // Save to localStorage whenever companies change
-  useEffect(() => {
-    if (companies.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(companies));
+  const loadCompanies = async () => {
+    if (!currentOrganization) return;
+
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading companies:', error);
+        return;
+      }
+
+      setCompanies(data || []);
+    } catch (error) {
+      console.error('Error loading companies:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [companies]);
+  };
 
   const filteredCompanies = companies.filter((company) => {
     const matchesSearch =
@@ -325,27 +310,99 @@ export default function CompaniesPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleCompanyAdded = (newCompany: Company) => {
-    // Add default values for new fields if missing
-    const companyWithDefaults: Company = {
-      ...newCompany,
-      projects: newCompany.projects || [],
-      priority: newCompany.priority || 'medium',
-      relatedTasks: newCompany.relatedTasks || [],
-      relatedNotes: newCompany.relatedNotes || [],
-      relatedEvents: newCompany.relatedEvents || [],
-      last_activity_date: newCompany.last_activity_date || newCompany.created_at,
-    };
-    setCompanies([companyWithDefaults, ...companies]);
+  const handleCompanyAdded = async (newCompany: Omit<Company, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => {
+    if (!currentOrganization) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('companies')
+        .insert({
+          organization_id: currentOrganization.id,
+          name: newCompany.name,
+          logo: newCompany.logo,
+          industry: newCompany.industry,
+          size: newCompany.size,
+          revenue: newCompany.revenue,
+          location: newCompany.location,
+          website: newCompany.website,
+          email: newCompany.email,
+          phone: newCompany.phone,
+          contacts: newCompany.contacts,
+          deals: newCompany.deals,
+          status: newCompany.status,
+          tags: newCompany.tags,
+        });
+
+      if (error) {
+        console.error('Error creating company:', error);
+        alert('Firma oluşturulurken hata oluştu');
+        return;
+      }
+
+      await loadCompanies();
+    } catch (error) {
+      console.error('Error creating company:', error);
+      alert('Firma oluşturulurken hata oluştu');
+    }
   };
 
-  const handleCompanyUpdated = (updatedCompany: Company) => {
-    setCompanies(companies.map(c => c.id === updatedCompany.id ? updatedCompany : c));
+  const handleCompanyUpdated = async (updatedCompany: Company) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('companies')
+        .update({
+          name: updatedCompany.name,
+          logo: updatedCompany.logo,
+          industry: updatedCompany.industry,
+          size: updatedCompany.size,
+          revenue: updatedCompany.revenue,
+          location: updatedCompany.location,
+          website: updatedCompany.website,
+          email: updatedCompany.email,
+          phone: updatedCompany.phone,
+          contacts: updatedCompany.contacts,
+          deals: updatedCompany.deals,
+          status: updatedCompany.status,
+          tags: updatedCompany.tags,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', updatedCompany.id);
+
+      if (error) {
+        console.error('Error updating company:', error);
+        alert('Firma güncellenirken hata oluştu');
+        return;
+      }
+
+      await loadCompanies();
+    } catch (error) {
+      console.error('Error updating company:', error);
+      alert('Firma güncellenirken hata oluştu');
+    }
   };
 
-  const handleDeleteCompany = (companyId: string) => {
-    if (confirm('Bu firmayı silmek istediğinizden emin misiniz?')) {
-      setCompanies(companies.filter(c => c.id !== companyId));
+  const handleDeleteCompany = async (companyId: string) => {
+    if (!confirm('Bu firmayı silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', companyId);
+
+      if (error) {
+        console.error('Error deleting company:', error);
+        alert('Firma silinirken hata oluştu');
+        return;
+      }
+
+      await loadCompanies();
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      alert('Firma silinirken hata oluştu');
     }
   };
 
@@ -378,6 +435,28 @@ export default function CompaniesPage() {
     { label: 'Potansiyel', value: 'prospect' },
     { label: 'Pasif', value: 'inactive' },
   ];
+
+  // Show loading state
+  if (orgLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-600 dark:text-primary-400" />
+          <p className="mt-4 text-neutral-600 dark:text-neutral-400">Firmalar yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentOrganization) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <p className="text-neutral-600 dark:text-neutral-400">Organizasyon bulunamadı</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
