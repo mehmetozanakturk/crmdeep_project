@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -86,6 +87,7 @@ const DEMO_CAMPAIGNS: Campaign[] = [
 ];
 
 export default function CampaignsPage() {
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
@@ -332,7 +334,11 @@ export default function CampaignsPage() {
               </thead>
               <tbody>
                 {filteredCampaigns.map((campaign) => (
-                  <tr key={campaign.id} className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                  <tr
+                    key={campaign.id}
+                    className="border-b border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 cursor-pointer"
+                    onClick={() => router.push(`/dashboard/campaigns/${campaign.id}`)}
+                  >
                     <td className="p-3">
                       <div>
                         <p className="font-medium text-neutral-900 dark:text-neutral-100">{campaign.name}</p>
@@ -350,7 +356,7 @@ export default function CampaignsPage() {
                     <td className="p-3 text-right text-purple-600 dark:text-purple-400">{calculateCTR(campaign.clicks, campaign.impressions)}%</td>
                     <td className="p-3 text-right text-success-600 dark:text-success-400">{campaign.conversions}</td>
                     <td className="p-3 text-right">₺{calculateCPA(campaign.spent, campaign.conversions)}</td>
-                    <td className="p-3 text-right">
+                    <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -358,7 +364,7 @@ export default function CampaignsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => alert('Detaylar yakında!')}>
+                          <DropdownMenuItem onClick={() => router.push(`/dashboard/campaigns/${campaign.id}`)}>
                             <BarChart3 className="mr-2 h-4 w-4" />
                             Detaylar
                           </DropdownMenuItem>
