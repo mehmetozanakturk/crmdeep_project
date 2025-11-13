@@ -24,20 +24,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import type { Project } from '@/app/dashboard/projects/page';
+import { updateProject, type Project, type UpdateProjectInput } from '@/lib/api/projects';
 
 const projectSchema = z.object({
   name: z.string().min(2, 'İsim en az 2 karakter olmalı'),
-  description: z.string().min(5, 'Açıklama en az 5 karakter olmalı'),
+  description: z.string().optional(),
   status: z.string(),
-  priority: z.string(),
-  brand: z.string().min(2, 'Marka adı gerekli'),
-  startDate: z.string().min(1, 'Başlangıç tarihi gerekli'),
-  endDate: z.string().min(1, 'Bitiş tarihi gerekli'),
-  progress: z.string().min(0).max(100),
-  tasksTotal: z.string().min(1, 'Toplam görev sayısı gerekli'),
-  tasksCompleted: z.string().min(0),
-  teamMembers: z.string().min(2, 'Ekip üyeleri gerekli'),
+  client: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  progress: z.string().optional(),
+  budget: z.string().optional(),
+  teamMembers: z.string().optional(),
+  tags: z.string().optional(),
 });
 
 type ProjectFormData = z.infer<typeof projectSchema>;
@@ -46,7 +45,7 @@ interface EditProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project: Project;
-  onProjectUpdated: (project: Project) => void;
+  onProjectUpdated: () => void;
 }
 
 export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated }: EditProjectModalProps) {
@@ -63,36 +62,33 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
     resolver: zodResolver(projectSchema),
     defaultValues: {
       name: project.name,
-      description: project.description,
+      description: project.description || '',
       status: project.status,
-      priority: project.priority,
-      brand: project.brand,
-      startDate: project.startDate,
-      endDate: project.endDate,
+      client: project.client || '',
+      startDate: project.start_date || '',
+      endDate: project.end_date || '',
       progress: project.progress.toString(),
-      tasksTotal: project.tasksTotal.toString(),
-      tasksCompleted: project.tasksCompleted.toString(),
-      teamMembers: project.teamMembers.map(m => m.name).join(', '),
+      budget: project.budget?.toString() || '',
+      teamMembers: project.team_members?.join(', ') || '',
+      tags: project.tags?.join(', ') || '',
     },
   });
 
   const statusValue = watch('status');
-  const priorityValue = watch('priority');
 
   useEffect(() => {
     if (open) {
       reset({
         name: project.name,
-        description: project.description,
+        description: project.description || '',
         status: project.status,
-        priority: project.priority,
-        brand: project.brand,
-        startDate: project.startDate,
-        endDate: project.endDate,
+        client: project.client || '',
+        startDate: project.start_date || '',
+        endDate: project.end_date || '',
         progress: project.progress.toString(),
-        tasksTotal: project.tasksTotal.toString(),
-        tasksCompleted: project.tasksCompleted.toString(),
-        teamMembers: project.teamMembers.map(m => m.name).join(', '),
+        budget: project.budget?.toString() || '',
+        teamMembers: project.team_members?.join(', ') || '',
+        tags: project.tags?.join(', ') || '',
       });
     }
   }, [open, project, reset]);
@@ -100,37 +96,33 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
   const onSubmit = async (data: ProjectFormData) => {
     setIsSubmitting(true);
     try {
-      const colors = ['#3B82F6', '#10B981', '#EC4899', '#0EA5E9', '#14B8A6', '#8B5CF6', '#EF4444', '#F59E0B'];
+      // Parse team members and tags from comma-separated strings
+      const team_members = data.teamMembers
+        ? data.teamMembers.split(',').map((m) => m.trim()).filter(Boolean)
+        : [];
+      const tags = data.tags
+        ? data.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : [];
 
-      // Parse team members (comma separated names)
-      const memberNames = data.teamMembers.split(',').map(n => n.trim());
-      const teamMembers = memberNames.map((name, idx) => {
-        // Try to preserve existing member colors
-        const existingMember = project.teamMembers.find(m => m.name === name);
-        return {
-          name,
-          initials: name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2),
-          color: existingMember?.color || colors[idx % colors.length],
-        };
-      });
-
-      const updatedProject: Project = {
-        ...project,
+      const input: UpdateProjectInput = {
+        id: project.id,
         name: data.name,
-        description: data.description,
-        status: data.status as Project['status'],
-        priority: data.priority as Project['priority'],
-        brand: data.brand,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        progress: parseInt(data.progress),
-        tasksTotal: parseInt(data.tasksTotal),
-        tasksCompleted: parseInt(data.tasksCompleted),
-        teamMembers,
-        updated_at: new Date().toISOString(),
+        description: data.description || '',
+        status: data.status as 'active' | 'completed' | 'on-hold' | 'at-risk',
+        progress: data.progress ? parseInt(data.progress) : 0,
+        start_date: data.startDate || undefined,
+        end_date: data.endDate || undefined,
+        budget: data.budget ? parseFloat(data.budget) : undefined,
+        client: data.client || undefined,
+        team_members,
+        tags,
       };
-      onProjectUpdated(updatedProject);
-      onOpenChange(false);
+
+      const result = await updateProject(input);
+      if (result) {
+        onProjectUpdated();
+        onOpenChange(false);
+      }
     } catch (error) {
       console.error('Error updating project:', error);
     } finally {
@@ -166,7 +158,7 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
 
             {/* Description */}
             <div className="md:col-span-2">
-              <Label htmlFor="description">Açıklama *</Label>
+              <Label htmlFor="description">Açıklama</Label>
               <Textarea
                 id="description"
                 placeholder="Proje detaylarını buraya yazın..."
@@ -179,29 +171,46 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
               )}
             </div>
 
-            {/* Brand */}
+            {/* Client */}
             <div>
-              <Label htmlFor="brand">Marka *</Label>
+              <Label htmlFor="client">Müşteri</Label>
               <Input
-                id="brand"
+                id="client"
                 placeholder="TechCorp"
-                {...register('brand')}
+                {...register('client')}
                 className="mt-1"
               />
-              {errors.brand && (
-                <p className="mt-1 text-xs text-danger-600">{errors.brand.message}</p>
+              {errors.client && (
+                <p className="mt-1 text-xs text-danger-600">{errors.client.message}</p>
+              )}
+            </div>
+
+            {/* Budget */}
+            <div>
+              <Label htmlFor="budget">Bütçe ($)</Label>
+              <Input
+                id="budget"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="50000"
+                {...register('budget')}
+                className="mt-1"
+              />
+              {errors.budget && (
+                <p className="mt-1 text-xs text-danger-600">{errors.budget.message}</p>
               )}
             </div>
 
             {/* Progress */}
             <div>
-              <Label htmlFor="progress">İlerleme (%) *</Label>
+              <Label htmlFor="progress">İlerleme (%)</Label>
               <Input
                 id="progress"
                 type="number"
                 min="0"
                 max="100"
-                placeholder="50"
+                placeholder="0"
                 {...register('progress')}
                 className="mt-1"
               />
@@ -211,7 +220,7 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
             </div>
 
             {/* Status */}
-            <div>
+            <div className="md:col-span-1">
               <Label htmlFor="status">Durum *</Label>
               <Select
                 value={statusValue}
@@ -229,27 +238,9 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
               </Select>
             </div>
 
-            {/* Priority */}
-            <div>
-              <Label htmlFor="priority">Öncelik *</Label>
-              <Select
-                value={priorityValue}
-                onValueChange={(value) => setValue('priority', value)}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Öncelik seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Düşük</SelectItem>
-                  <SelectItem value="medium">Orta</SelectItem>
-                  <SelectItem value="high">Yüksek</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Start Date */}
             <div>
-              <Label htmlFor="startDate">Başlangıç Tarihi *</Label>
+              <Label htmlFor="startDate">Başlangıç Tarihi</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -263,7 +254,7 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
 
             {/* End Date */}
             <div>
-              <Label htmlFor="endDate">Bitiş Tarihi *</Label>
+              <Label htmlFor="endDate">Bitiş Tarihi</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -275,41 +266,9 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
               )}
             </div>
 
-            {/* Tasks Total */}
-            <div>
-              <Label htmlFor="tasksTotal">Toplam Görev Sayısı *</Label>
-              <Input
-                id="tasksTotal"
-                type="number"
-                min="0"
-                placeholder="20"
-                {...register('tasksTotal')}
-                className="mt-1"
-              />
-              {errors.tasksTotal && (
-                <p className="mt-1 text-xs text-danger-600">{errors.tasksTotal.message}</p>
-              )}
-            </div>
-
-            {/* Tasks Completed */}
-            <div>
-              <Label htmlFor="tasksCompleted">Tamamlanan Görev *</Label>
-              <Input
-                id="tasksCompleted"
-                type="number"
-                min="0"
-                placeholder="10"
-                {...register('tasksCompleted')}
-                className="mt-1"
-              />
-              {errors.tasksCompleted && (
-                <p className="mt-1 text-xs text-danger-600">{errors.tasksCompleted.message}</p>
-              )}
-            </div>
-
             {/* Team Members */}
             <div className="md:col-span-2">
-              <Label htmlFor="teamMembers">Ekip Üyeleri (virgülle ayırın) *</Label>
+              <Label htmlFor="teamMembers">Ekip Üyeleri (virgülle ayırın)</Label>
               <Input
                 id="teamMembers"
                 placeholder="Ahmet Y., Zeynep K., Mehmet S."
@@ -321,6 +280,23 @@ export function EditProjectModal({ open, onOpenChange, project, onProjectUpdated
               )}
               <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                 Ekip üyelerini virgülle ayırın
+              </p>
+            </div>
+
+            {/* Tags */}
+            <div className="md:col-span-2">
+              <Label htmlFor="tags">Etiketler (virgülle ayırın)</Label>
+              <Input
+                id="tags"
+                placeholder="web, frontend, tasarım"
+                {...register('tags')}
+                className="mt-1"
+              />
+              {errors.tags && (
+                <p className="mt-1 text-xs text-danger-600">{errors.tags.message}</p>
+              )}
+              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                Etiketleri virgülle ayırın
               </p>
             </div>
           </div>
