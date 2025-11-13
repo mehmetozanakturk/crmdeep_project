@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/components/theme-provider';
 import { BrandSwitcher } from './BrandSwitcher';
+import { NotificationsDropdown } from './NotificationsDropdown';
 
 interface HeaderProps {
   onMobileSidebarToggle: () => void;
@@ -89,15 +90,7 @@ export function Header({ onMobileSidebarToggle }: HeaderProps) {
           </Button>
 
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative text-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800">
-            <Bell className="h-5 w-5" />
-            <Badge
-              variant="destructive"
-              className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
-            >
-              3
-            </Badge>
-          </Button>
+          <NotificationsDropdown />
 
           {/* User Menu */}
           <DropdownMenu>
