@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { TagSelector } from '@/components/ui/tag-selector';
 import type { Task } from '@/app/dashboard/tasks/page';
 
 const taskSchema = z.object({
@@ -34,7 +35,6 @@ const taskSchema = z.object({
   assignee: z.string().min(2, 'Sorumlu gerekli'),
   dueDate: z.string().min(1, 'Bitiş tarihi gerekli'),
   project: z.string().min(2, 'Proje adı gerekli'),
-  tags: z.string().optional(),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -47,6 +47,7 @@ interface AddTaskModalProps {
 
 export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const {
     register,
@@ -85,7 +86,7 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalPr
         },
         dueDate: data.dueDate,
         project: data.project,
-        tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+        tags: selectedTags,
         attachments: 0,
         comments: 0,
         created_at: new Date().toISOString(),
@@ -93,6 +94,7 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalPr
       };
       onTaskAdded(newTask);
       reset();
+      setSelectedTags([]);
       onOpenChange(false);
     } catch (error) {
       console.error('Error adding task:', error);
@@ -223,16 +225,13 @@ export function AddTaskModal({ open, onOpenChange, onTaskAdded }: AddTaskModalPr
 
             {/* Tags */}
             <div className="md:col-span-2">
-              <Label htmlFor="tags">Etiketler (virgülle ayırın)</Label>
-              <Input
-                id="tags"
-                placeholder="Design, Frontend, Urgent"
-                {...register('tags')}
-                className="mt-1"
+              <Label>Etiketler</Label>
+              <TagSelector
+                selectedTags={selectedTags}
+                onChange={setSelectedTags}
+                category="tasks"
+                placeholder="Etiket seç veya ekle..."
               />
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Etiketleri virgülle ayırın
-              </p>
             </div>
           </div>
 

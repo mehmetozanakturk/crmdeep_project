@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { TagSelector } from '@/components/ui/tag-selector';
 import type { Note } from '@/app/dashboard/notes/page';
 
 const noteSchema = z.object({
@@ -31,7 +32,6 @@ const noteSchema = z.object({
   content: z.string().min(5, 'İçerik en az 5 karakter olmalı'),
   color: z.string(),
   category: z.enum(['work', 'personal', 'project', 'idea', 'meeting', 'other']),
-  tags: z.string().optional(),
 });
 
 type NoteFormData = z.infer<typeof noteSchema>;
@@ -44,6 +44,7 @@ interface AddNoteModalProps {
 
 export function AddNoteModal({ open, onOpenChange, onNoteAdded }: AddNoteModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const {
     register,
@@ -73,13 +74,14 @@ export function AddNoteModal({ open, onOpenChange, onNoteAdded }: AddNoteModalPr
         color: data.color,
         pinned: false,
         createdAt: new Date().toLocaleDateString('tr-TR'),
-        tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+        tags: selectedTags,
         category: data.category,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       onNoteAdded(newNote);
       reset();
+      setSelectedTags([]);
       onOpenChange(false);
     } catch (error) {
       console.error('Error adding note:', error);
@@ -176,16 +178,13 @@ export function AddNoteModal({ open, onOpenChange, onNoteAdded }: AddNoteModalPr
 
             {/* Tags */}
             <div>
-              <Label htmlFor="tags">Etiketler (virgülle ayırın)</Label>
-              <Input
-                id="tags"
-                placeholder="Toplantı, Önemli, Todo"
-                {...register('tags')}
-                className="mt-1"
+              <Label>Etiketler</Label>
+              <TagSelector
+                selectedTags={selectedTags}
+                onChange={setSelectedTags}
+                category="notes"
+                placeholder="Etiket seç veya ekle..."
               />
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Etiketleri virgülle ayırın
-              </p>
             </div>
           </div>
 
