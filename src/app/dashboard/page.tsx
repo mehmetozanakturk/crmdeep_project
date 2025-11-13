@@ -1,181 +1,308 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   TrendingUp,
   TrendingDown,
   Briefcase,
-  FolderKanban,
-  CheckSquare,
   Users,
   DollarSign,
   Target,
-  BarChart3,
   Calendar,
   Clock,
-  AlertCircle,
-  Star,
-  ArrowUpRight,
   Activity,
+  ArrowUpRight,
+  Building2,
+  Mail,
+  Phone,
+  Loader2,
+  Plus,
+  BarChart3,
+  LineChart,
+  PieChart as PieChartIcon,
+  ShoppingCart,
 } from 'lucide-react';
+import {
+  LineChart as RechartsLineChart,
+  Line,
+  BarChart as RechartsBarChart,
+  Bar,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { useOrganization } from '@/lib/hooks/useOrganization';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+
+interface Deal {
+  id: string;
+  title: string;
+  company: string;
+  value: number;
+  stage: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Contact {
+  id: string;
+  name: string;
+  email: string | null;
+  company_name: string | null;
+  created_at: string;
+}
+
+interface Company {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+interface Campaign {
+  id: string;
+  name: string;
+  budget: number;
+  spent: number;
+  impressions: number;
+  clicks: number;
+  status?: string;
+  created_at: string;
+}
+
+interface DashboardStats {
+  totalRevenue: number;
+  revenueChange: number;
+  activeDeals: number;
+  dealsChange: number;
+  totalContacts: number;
+  contactsChange: number;
+  conversionRate: number;
+  conversionChange: number;
+}
+
+const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'];
 
 export default function DashboardPage() {
-  // TODO: Replace with real data from Supabase
-  const stats = [
-    {
-      name: 'Total Revenue',
-      value: '$124,500',
-      change: '+12.5%',
-      trend: 'up',
-      icon: DollarSign,
-      description: 'vs last month',
-      color: 'text-success-600',
-    },
-    {
-      name: 'Active Brands',
-      value: '12',
-      change: '+2',
-      trend: 'up',
-      icon: Briefcase,
-      description: '2 new this month',
-      color: 'text-primary-600',
-    },
-    {
-      name: 'Active Projects',
-      value: '24',
-      change: '+5',
-      trend: 'up',
-      icon: FolderKanban,
-      description: '18 in progress',
-      color: 'text-warning-600',
-    },
-    {
-      name: 'Completion Rate',
-      value: '87%',
-      change: '+3.2%',
-      trend: 'up',
-      icon: Target,
-      description: 'task completion',
-      color: 'text-success-600',
-    },
-  ];
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalRevenue: 0,
+    revenueChange: 0,
+    activeDeals: 0,
+    dealsChange: 0,
+    totalContacts: 0,
+    contactsChange: 0,
+    conversionRate: 0,
+    conversionChange: 0,
+  });
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [dealsByStage, setDealsByStage] = useState<any[]>([]);
+  const [monthlyDeals, setMonthlyDeals] = useState<any[]>([]);
 
-  const salesPipeline = [
-    { stage: 'Leads', count: 45, value: '$225,000', color: 'bg-neutral-500' },
-    { stage: 'Qualified', count: 28, value: '$168,000', color: 'bg-primary-500' },
-    { stage: 'Proposal', count: 15, value: '$112,500', color: 'bg-warning-500' },
-    { stage: 'Negotiation', count: 8, value: '$64,000', color: 'bg-success-500' },
-    { stage: 'Closed Won', count: 12, value: '$96,000', color: 'bg-success-600' },
-  ];
+  const loadDashboardData = useCallback(async () => {
+    if (!currentOrganization) return;
 
-  const brandPerformance = [
-    { name: 'TechCorp Solutions', revenue: '$45,200', growth: '+18%', projects: 8, status: 'excellent' },
-    { name: 'Digital Marketing Co', revenue: '$32,800', growth: '+12%', projects: 5, status: 'good' },
-    { name: 'E-commerce Plus', revenue: '$28,400', growth: '+8%', projects: 6, status: 'good' },
-    { name: 'StartUp Ventures', revenue: '$18,100', growth: '-5%', projects: 3, status: 'needs-attention' },
-    { name: 'Creative Agency', revenue: '$24,600', growth: '+15%', projects: 4, status: 'excellent' },
-  ];
+    try {
+      setIsLoading(true);
+      const supabase = createClient();
 
-  const recentActivity = [
-    {
-      user: 'Sarah Johnson',
-      action: 'completed task',
-      target: 'Q4 Marketing Campaign',
-      time: '5 minutes ago',
-      type: 'task',
-      avatar: '',
-    },
-    {
-      user: 'Michael Chen',
-      action: 'created project',
-      target: 'Website Redesign 2024',
-      time: '1 hour ago',
-      type: 'project',
-      avatar: '',
-    },
-    {
-      user: 'Emily Rodriguez',
-      action: 'closed deal',
-      target: '$15,000 - Enterprise Package',
-      time: '2 hours ago',
-      type: 'deal',
-      avatar: '',
-    },
-    {
-      user: 'David Kim',
-      action: 'added brand',
-      target: 'New Tech Startup Inc.',
-      time: '3 hours ago',
-      type: 'brand',
-      avatar: '',
-    },
-    {
-      user: 'Lisa Anderson',
-      action: 'commented on',
-      target: 'Mobile App Development',
-      time: '5 hours ago',
-      type: 'comment',
-      avatar: '',
-    },
-  ];
+      // Fetch all data in parallel
+      const [dealsData, contactsData, companiesData, campaignsData] = await Promise.all([
+        supabase.from('deals').select('*').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }),
+        supabase.from('contacts').select('*').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }),
+        supabase.from('companies').select('*').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }),
+        supabase.from('campaigns').select('*').eq('organization_id', currentOrganization.id).order('created_at', { ascending: false }),
+      ]);
 
-  const upcomingTasks = [
-    {
-      title: 'Client presentation for TechCorp',
-      brand: 'TechCorp Solutions',
-      due: '2 hours',
-      priority: 'high',
-      assignee: 'Sarah J.',
-      progress: 75,
-    },
-    {
-      title: 'Review marketing analytics report',
-      brand: 'Digital Marketing Co',
-      due: 'Tomorrow, 10:00 AM',
-      priority: 'high',
-      assignee: 'Michael C.',
-      progress: 45,
-    },
-    {
-      title: 'Design review meeting',
-      brand: 'Creative Agency',
-      due: 'Tomorrow, 2:00 PM',
-      priority: 'medium',
-      assignee: 'Emily R.',
-      progress: 60,
-    },
-    {
-      title: 'Update project timeline',
-      brand: 'E-commerce Plus',
-      due: 'In 2 days',
-      priority: 'medium',
-      assignee: 'David K.',
-      progress: 30,
-    },
-    {
-      title: 'Prepare monthly report',
-      brand: 'Multiple Brands',
-      due: 'In 3 days',
-      priority: 'low',
-      assignee: 'Lisa A.',
-      progress: 15,
-    },
-  ];
+      const allDeals = dealsData.data || [];
+      const allContacts = contactsData.data || [];
+      const allCompanies = companiesData.data || [];
+      const allCampaigns = campaignsData.data || [];
 
-  const teamPerformance = [
-    { name: 'Sarah Johnson', role: 'Project Manager', tasksCompleted: 47, efficiency: 94 },
-    { name: 'Michael Chen', role: 'Developer', tasksCompleted: 52, efficiency: 89 },
-    { name: 'Emily Rodriguez', role: 'Sales Lead', tasksCompleted: 38, efficiency: 92 },
-    { name: 'David Kim', role: 'Designer', tasksCompleted: 41, efficiency: 87 },
-  ];
+      setDeals(allDeals);
+      setContacts(allContacts);
+      setCompanies(allCompanies);
+      setCampaigns(allCampaigns);
 
-  const projectStatus = [
-    { status: 'On Track', count: 14, percentage: 58 },
-    { status: 'At Risk', count: 6, percentage: 25 },
-    { status: 'Delayed', count: 2, percentage: 8 },
-    { status: 'Completed', count: 2, percentage: 8 },
-  ];
+      // Calculate stats
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+      // Revenue calculations
+      const totalRevenue = allDeals
+        .filter((d) => d.stage === 'closed_won')
+        .reduce((sum, deal) => sum + (deal.value || 0), 0);
+
+      const revenueLastMonth = allDeals
+        .filter((d) => d.stage === 'closed_won' && new Date(d.updated_at) >= thirtyDaysAgo)
+        .reduce((sum, deal) => sum + (deal.value || 0), 0);
+
+      const revenuePrevMonth = allDeals
+        .filter((d) => d.stage === 'closed_won' && new Date(d.updated_at) >= sixtyDaysAgo && new Date(d.updated_at) < thirtyDaysAgo)
+        .reduce((sum, deal) => sum + (deal.value || 0), 0);
+
+      const revenueChange = revenuePrevMonth > 0 ? ((revenueLastMonth - revenuePrevMonth) / revenuePrevMonth) * 100 : 0;
+
+      // Active deals (not closed)
+      const activeDeals = allDeals.filter((d) => d.stage !== 'closed_won' && d.stage !== 'closed_lost').length;
+      const activeDealsLastMonth = allDeals.filter(
+        (d) => d.stage !== 'closed_won' && d.stage !== 'closed_lost' && new Date(d.created_at) >= thirtyDaysAgo
+      ).length;
+      const activeDealsChange = activeDealsLastMonth;
+
+      // Contacts
+      const totalContacts = allContacts.length;
+      const contactsLastMonth = allContacts.filter((c) => new Date(c.created_at) >= thirtyDaysAgo).length;
+
+      // Conversion rate
+      const totalLeads = allDeals.length;
+      const wonDeals = allDeals.filter((d) => d.stage === 'closed_won').length;
+      const conversionRate = totalLeads > 0 ? (wonDeals / totalLeads) * 100 : 0;
+
+      setStats({
+        totalRevenue,
+        revenueChange,
+        activeDeals,
+        dealsChange: activeDealsChange,
+        totalContacts,
+        contactsChange: contactsLastMonth,
+        conversionRate,
+        conversionChange: 2.3, // Mock for now
+      });
+
+      // Generate revenue trend data (last 30 days)
+      const revenueByDay = [];
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayRevenue = allDeals
+          .filter(
+            (d) =>
+              d.stage === 'closed_won' &&
+              d.updated_at &&
+              d.updated_at.split('T')[0] === dateStr
+          )
+          .reduce((sum, deal) => sum + (deal.value || 0), 0);
+
+        revenueByDay.push({
+          date: date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
+          revenue: dayRevenue,
+        });
+      }
+      setRevenueData(revenueByDay);
+
+      // Deals by stage
+      const stageGroups = allDeals.reduce((acc: any, deal) => {
+        const stage = deal.stage || 'unknown';
+        if (!acc[stage]) {
+          acc[stage] = { name: stage, value: 0, count: 0 };
+        }
+        acc[stage].value += deal.value || 0;
+        acc[stage].count += 1;
+        return acc;
+      }, {});
+
+      const stageLabels: Record<string, string> = {
+        lead: 'Lead',
+        qualified: 'Nitelikli',
+        proposal: 'Teklif',
+        negotiation: 'Görüşme',
+        closed_won: 'Kazanıldı',
+        closed_lost: 'Kaybedildi',
+      };
+
+      const stagesData = Object.values(stageGroups).map((stage: any) => ({
+        name: stageLabels[stage.name] || stage.name,
+        value: stage.count,
+        revenue: stage.value,
+      }));
+      setDealsByStage(stagesData);
+
+      // Monthly deals comparison (last 6 months)
+      const monthlyData = [];
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthStr = date.toLocaleDateString('tr-TR', { month: 'short' });
+        const monthDeals = allDeals.filter((d) => {
+          const dealDate = new Date(d.created_at);
+          return dealDate.getMonth() === date.getMonth() && dealDate.getFullYear() === date.getFullYear();
+        });
+
+        monthlyData.push({
+          month: monthStr,
+          deals: monthDeals.length,
+          revenue: monthDeals.reduce((sum, deal) => sum + (deal.value || 0), 0),
+        });
+      }
+      setMonthlyDeals(monthlyData);
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentOrganization]);
+
+  useEffect(() => {
+    if (currentOrganization) {
+      loadDashboardData();
+    }
+  }, [currentOrganization, loadDashboardData]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('tr-TR', {
+      style: 'currency',
+      currency: 'TRY',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatNumber = (value: number) => {
+    return new Intl.NumberFormat('tr-TR').format(value);
+  };
+
+  // Show loading state
+  if (orgLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-600 dark:text-primary-400" />
+          <p className="mt-4 text-neutral-600 dark:text-neutral-400">Dashboard yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentOrganization) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <p className="text-neutral-600 dark:text-neutral-400">Organizasyon bulunamadı</p>
+        </div>
+      </div>
+    );
+  }
+
+  const recentDeals = deals.slice(0, 5);
+  const recentContacts = contacts.slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -184,389 +311,495 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Dashboard</h1>
           <p className="mt-1 text-neutral-600 dark:text-neutral-400">
-            Welcome back! Here&apos;s a comprehensive overview of your business.
+            Hoş geldiniz! İşinizin genel görünümü.
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700">
+          <Button variant="outline" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Last 30 days
-          </button>
+            Son 30 gün
+          </Button>
         </div>
       </div>
 
       {/* Key Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          const isPositive = stat.trend === 'up';
-
-          return (
-            <Card key={stat.name}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                  {stat.name}
-                </CardTitle>
-                <div className={`rounded-lg bg-neutral-100 dark:bg-neutral-700 p-2 ${stat.color}`}>
-                  <Icon className="h-4 w-4" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">{stat.value}</div>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs">
-                    {isPositive ? (
-                      <TrendingUp className="h-3 w-3 text-success-600" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 text-danger-600" />
-                    )}
-                    <span className={isPositive ? 'text-success-600' : 'text-danger-600'}>
-                      {stat.change}
-                    </span>
-                  </div>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400">{stat.description}</span>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Sales Pipeline & Project Status */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Sales Pipeline */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary-600" />
-              Sales Pipeline
+        {/* Total Revenue */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+              Toplam Gelir
             </CardTitle>
-            <CardDescription>Current opportunities and their stages</CardDescription>
+            <div className="rounded-lg bg-success-100 dark:bg-success-900/30 p-2">
+              <DollarSign className="h-4 w-4 text-success-600 dark:text-success-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {salesPipeline.map((stage, index) => (
-                <div key={stage.stage}>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className={`h-3 w-3 rounded-full ${stage.color}`} />
-                      <span className="font-medium text-neutral-900 dark:text-neutral-100">{stage.stage}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-neutral-600 dark:text-neutral-400">{stage.count} deals</span>
-                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{stage.value}</span>
-                    </div>
-                  </div>
-                  <Progress
-                    value={(stage.count / salesPipeline[0].count) * 100}
-                    className="h-3"
-                    indicatorClassName={stage.color}
-                  />
-                </div>
-              ))}
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+              {formatCurrency(stats.totalRevenue)}
             </div>
-            <div className="mt-4 rounded-lg bg-primary-50 dark:bg-primary-900/20 p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-primary-900 dark:text-primary-100">Total Pipeline Value</span>
-                <span className="text-lg font-bold text-primary-600 dark:text-primary-400">$665,500</span>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs">
+                {stats.revenueChange >= 0 ? (
+                  <>
+                    <TrendingUp className="h-3 w-3 text-success-600" />
+                    <span className="text-success-600">+{stats.revenueChange.toFixed(1)}%</span>
+                  </>
+                ) : (
+                  <>
+                    <TrendingDown className="h-3 w-3 text-danger-600" />
+                    <span className="text-danger-600">{stats.revenueChange.toFixed(1)}%</span>
+                  </>
+                )}
               </div>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">vs geçen ay</span>
             </div>
           </CardContent>
         </Card>
 
-        {/* Project Status Overview */}
-        <Card>
+        {/* Active Deals */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+              Aktif Fırsatlar
+            </CardTitle>
+            <div className="rounded-lg bg-primary-100 dark:bg-primary-900/30 p-2">
+              <Target className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+              {stats.activeDeals}
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs">
+                <TrendingUp className="h-3 w-3 text-primary-600" />
+                <span className="text-primary-600">+{stats.dealsChange}</span>
+              </div>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">bu ay</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Total Contacts */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+              Toplam Kişiler
+            </CardTitle>
+            <div className="rounded-lg bg-warning-100 dark:bg-warning-900/30 p-2">
+              <Users className="h-4 w-4 text-warning-600 dark:text-warning-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+              {stats.totalContacts}
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs">
+                <TrendingUp className="h-3 w-3 text-warning-600" />
+                <span className="text-warning-600">+{stats.contactsChange}</span>
+              </div>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">yeni</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Conversion Rate */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+              Dönüşüm Oranı
+            </CardTitle>
+            <div className="rounded-lg bg-success-100 dark:bg-success-900/30 p-2">
+              <BarChart3 className="h-4 w-4 text-success-600 dark:text-success-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+              {stats.conversionRate.toFixed(1)}%
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs">
+                <TrendingUp className="h-3 w-3 text-success-600" />
+                <span className="text-success-600">+{stats.conversionChange}%</span>
+              </div>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">deal başarısı</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 1 */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Revenue Trend Chart */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LineChart className="h-5 w-5 text-primary-600" />
+              Gelir Trendi
+            </CardTitle>
+            <CardDescription>Son 30 günlük gelir akışı</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsLineChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+                <XAxis
+                  dataKey="date"
+                  className="text-xs text-neutral-600 dark:text-neutral-400"
+                  tick={{ fill: 'currentColor' }}
+                />
+                <YAxis
+                  className="text-xs text-neutral-600 dark:text-neutral-400"
+                  tick={{ fill: 'currentColor' }}
+                  tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
+                  formatter={(value: any) => [formatCurrency(value), 'Gelir']}
+                />
+                <Line type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} dot={false} />
+              </RechartsLineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Deals by Stage Pie Chart */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-primary-600" />
+              Fırsatlar - Aşama Dağılımı
+            </CardTitle>
+            <CardDescription>Deal&apos;lerin mevcut durumu</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsPieChart>
+                <Pie
+                  data={dealsByStage}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name}: ${value}`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {dealsByStage.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
+                  formatter={(value: any, name: string, props: any) => [
+                    `${value} deal (${formatCurrency(props.payload.revenue)})`,
+                    'Toplam',
+                  ]}
+                />
+              </RechartsPieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 2 */}
+      <div className="grid gap-6 md:grid-cols-1">
+        {/* Monthly Deals Bar Chart */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary-600" />
-              Project Status Overview
+              Aylık Fırsat Performansı
             </CardTitle>
-            <CardDescription>Current status of all active projects</CardDescription>
+            <CardDescription>Son 6 aydaki fırsat sayısı ve gelir</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {projectStatus.map((item) => (
-                <div key={item.status}>
-                  <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-medium text-neutral-900 dark:text-neutral-100">{item.status}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-neutral-600 dark:text-neutral-400">{item.count} projects</span>
-                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{item.percentage}%</span>
-                    </div>
-                  </div>
-                  <Progress value={item.percentage} className="h-2" />
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 p-3 text-center border border-emerald-200 dark:border-emerald-500/20">
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">On-time delivery</p>
-                <p className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">92%</p>
-              </div>
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 p-3 text-center border border-amber-200 dark:border-amber-500/20">
-                <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Avg. completion</p>
-                <p className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">68%</p>
-              </div>
-            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <RechartsBarChart data={monthlyDeals}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-700" />
+                <XAxis
+                  dataKey="month"
+                  className="text-xs text-neutral-600 dark:text-neutral-400"
+                  tick={{ fill: 'currentColor' }}
+                />
+                <YAxis
+                  yAxisId="left"
+                  className="text-xs text-neutral-600 dark:text-neutral-400"
+                  tick={{ fill: 'currentColor' }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  className="text-xs text-neutral-600 dark:text-neutral-400"
+                  tick={{ fill: 'currentColor' }}
+                  tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
+                  formatter={(value: any, name: string) => [
+                    name === 'deals' ? value : formatCurrency(value),
+                    name === 'deals' ? 'Fırsat Sayısı' : 'Gelir',
+                  ]}
+                />
+                <Legend />
+                <Bar yAxisId="left" dataKey="deals" fill="#6366f1" name="Fırsat Sayısı" radius={[8, 8, 0, 0]} />
+                <Bar yAxisId="right" dataKey="revenue" fill="#10b981" name="Gelir" radius={[8, 8, 0, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Brand Performance Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-primary-600" />
-            Brand Performance
-          </CardTitle>
-          <CardDescription>Revenue and project metrics for each brand</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-neutral-200 dark:border-neutral-700">
-                  <th className="pb-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400">BRAND NAME</th>
-                  <th className="pb-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">REVENUE</th>
-                  <th className="pb-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">GROWTH</th>
-                  <th className="pb-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">PROJECTS</th>
-                  <th className="pb-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400">STATUS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {brandPerformance.map((brand, index) => (
-                  <tr key={brand.name} className="border-b border-neutral-100 dark:border-neutral-800">
-                    <td className="py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100">{brand.name}</td>
-                    <td className="py-3 text-right text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                      {brand.revenue}
-                    </td>
-                    <td className="py-3 text-right text-sm">
-                      <span
-                        className={
-                          brand.growth.startsWith('+') ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'
-                        }
-                      >
-                        {brand.growth}
-                      </span>
-                    </td>
-                    <td className="py-3 text-right text-sm text-neutral-600 dark:text-neutral-400">{brand.projects}</td>
-                    <td className="py-3 text-right">
-                      <Badge
-                        variant={
-                          brand.status === 'excellent'
-                            ? 'default'
-                            : brand.status === 'good'
-                            ? 'secondary'
-                            : 'destructive'
-                        }
-                      >
-                        {brand.status === 'excellent'
-                          ? 'Excellent'
-                          : brand.status === 'good'
-                          ? 'Good'
-                          : 'Needs Attention'}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity & Upcoming Tasks */}
+      {/* Recent Activity & Quick Stats */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Recent Activity */}
-        <Card>
+        {/* Recent Deals */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary-600" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>Latest updates from your team</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary-600" />
+                  Son Fırsatlar
+                </CardTitle>
+                <CardDescription>En son eklenen deals</CardDescription>
+              </div>
+              <Link href="/dashboard/deals">
+                <Button variant="ghost" size="sm" className="text-primary-600">
+                  Tümünü Gör
+                  <ArrowUpRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={activity.avatar} />
-                    <AvatarFallback className="bg-primary-100 text-xs text-primary-600">
-                      {activity.user
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm text-neutral-900 dark:text-neutral-100">
-                      <span className="font-medium">{activity.user}</span>{' '}
-                      <span className="text-neutral-600 dark:text-neutral-400">{activity.action}</span>{' '}
-                      <span className="font-medium">{activity.target}</span>
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-3 w-3 text-neutral-400 dark:text-neutral-500" />
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">{activity.time}</span>
+              {recentDeals.length === 0 ? (
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 text-neutral-400 mx-auto mb-3" />
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Henüz fırsat eklenmemiş</p>
+                  <Link href="/dashboard/deals">
+                    <Button variant="outline" size="sm" className="mt-3">
+                      <Plus className="mr-2 h-4 w-4" />
+                      İlk Fırsatı Ekle
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                recentDeals.map((deal) => (
+                  <div key={deal.id} className="flex items-center justify-between p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                        {deal.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Building2 className="h-3 w-3 text-neutral-400" />
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{deal.company}</p>
+                      </div>
+                    </div>
+                    <div className="text-right ml-3">
+                      <p className="text-sm font-bold text-primary-600 dark:text-primary-400">
+                        {formatCurrency(deal.value)}
+                      </p>
+                      <Badge variant="outline" className="mt-1 text-xs">
+                        {deal.stage}
+                      </Badge>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
-            <button className="mt-4 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800">
-              View all activity
-            </button>
           </CardContent>
         </Card>
 
-        {/* Upcoming Tasks */}
-        <Card>
+        {/* Recent Contacts */}
+        <Card className="border-neutral-200 dark:border-neutral-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-primary-600" />
-              Upcoming Tasks
-            </CardTitle>
-            <CardDescription>Tasks due in the next 7 days</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary-600" />
+                  Son Kişiler
+                </CardTitle>
+                <CardDescription>En son eklenen contacts</CardDescription>
+              </div>
+              <Link href="/dashboard/contacts">
+                <Button variant="ghost" size="sm" className="text-primary-600">
+                  Tümünü Gör
+                  <ArrowUpRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {upcomingTasks.map((task, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{task.title}</p>
-                        <Badge
-                          variant={
-                            task.priority === 'high'
-                              ? 'destructive'
-                              : task.priority === 'medium'
-                              ? 'warning'
-                              : 'secondary'
-                          }
-                        >
-                          {task.priority}
-                        </Badge>
-                      </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                        <span>{task.brand}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {task.due}
-                        </span>
-                        <span>•</span>
-                        <span>{task.assignee}</span>
+              {recentContacts.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-neutral-400 mx-auto mb-3" />
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Henüz kişi eklenmemiş</p>
+                  <Link href="/dashboard/contacts">
+                    <Button variant="outline" size="sm" className="mt-3">
+                      <Plus className="mr-2 h-4 w-4" />
+                      İlk Kişiyi Ekle
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                recentContacts.map((contact) => (
+                  <div key={contact.id} className="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
+                        {contact.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                        {contact.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {contact.email && (
+                          <>
+                            <Mail className="h-3 w-3 text-neutral-400" />
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                              {contact.email}
+                            </p>
+                          </>
+                        )}
                       </div>
                     </div>
+                    {contact.company_name && (
+                      <Badge variant="secondary" className="text-xs">
+                        {contact.company_name}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={task.progress} className="h-1.5" />
-                    <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">{task.progress}%</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
-            <button className="mt-4 w-full rounded-lg border border-neutral-200 dark:border-neutral-700 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800">
-              View all tasks
-            </button>
           </CardContent>
         </Card>
       </div>
-
-      {/* Team Performance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary-600" />
-            Team Performance
-          </CardTitle>
-          <CardDescription>Individual performance metrics for this month</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {teamPerformance.map((member) => (
-              <div key={member.name} className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback className="bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
-                      {member.name
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium text-neutral-900 dark:text-neutral-100">{member.name}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{member.role}</p>
-                  </div>
-                </div>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-600 dark:text-neutral-400">Tasks completed</span>
-                    <span className="font-semibold text-neutral-900 dark:text-neutral-100">{member.tasksCompleted}</span>
-                  </div>
-                  <div>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-neutral-600 dark:text-neutral-400">Efficiency</span>
-                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{member.efficiency}%</span>
-                    </div>
-                    <Progress value={member.efficiency} className="h-2" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="border-neutral-200 dark:border-neutral-700">
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Frequently used actions to boost productivity</CardDescription>
+          <CardTitle>Hızlı Aksiyonlar</CardTitle>
+          <CardDescription>Sık kullanılan işlemler</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
-              <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
-                <Briefcase className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Add Brand</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Create new brand</p>
-              </div>
-            </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
-              <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
-                <FolderKanban className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">New Project</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Start new project</p>
-              </div>
-            </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
-              <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
-                <CheckSquare className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Create Task</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Add new task</p>
-              </div>
-            </button>
-            <button className="group flex items-center gap-3 rounded-lg border-2 border-dashed border-neutral-300 dark:border-neutral-700 p-4 transition-all hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
-              <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 p-2 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30">
-                <Users className="h-5 w-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Invite Member</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Add team member</p>
-              </div>
-            </button>
+            <Link href="/dashboard/deals">
+              <Button variant="outline" className="w-full h-auto p-4 flex items-start gap-3 hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                <div className="rounded-lg bg-primary-100 dark:bg-primary-900/30 p-2">
+                  <Target className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Yeni Fırsat</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Deal ekle</p>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/dashboard/contacts">
+              <Button variant="outline" className="w-full h-auto p-4 flex items-start gap-3 hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                <div className="rounded-lg bg-warning-100 dark:bg-warning-900/30 p-2">
+                  <Users className="h-5 w-5 text-warning-600 dark:text-warning-400" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Yeni Kişi</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Contact ekle</p>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/dashboard/companies">
+              <Button variant="outline" className="w-full h-auto p-4 flex items-start gap-3 hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                <div className="rounded-lg bg-success-100 dark:bg-success-900/30 p-2">
+                  <Briefcase className="h-5 w-5 text-success-600 dark:text-success-400" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Yeni Firma</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Company ekle</p>
+                </div>
+              </Button>
+            </Link>
+
+            <Link href="/dashboard/reports">
+              <Button variant="outline" className="w-full h-auto p-4 flex items-start gap-3 hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                <div className="rounded-lg bg-purple-100 dark:bg-purple-900/30 p-2">
+                  <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Raporlar</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Analiz görüntüle</p>
+                </div>
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
+
+      {/* Additional Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Toplam Firmalar</p>
+                <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {companies.length}
+                </p>
+              </div>
+              <Building2 className="h-8 w-8 text-neutral-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Aktif Kampanyalar</p>
+                <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {campaigns.filter((c) => c.status === 'active').length}
+                </p>
+              </div>
+              <Activity className="h-8 w-8 text-neutral-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-neutral-200 dark:border-neutral-700">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Ortalama Deal Değeri</p>
+                <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  {deals.length > 0 ? formatCurrency(stats.totalRevenue / deals.length) : formatCurrency(0)}
+                </p>
+              </div>
+              <DollarSign className="h-8 w-8 text-neutral-400" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
