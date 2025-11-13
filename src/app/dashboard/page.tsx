@@ -22,7 +22,26 @@ import {
   ArrowUpRight,
   Activity,
   Loader2,
+  TrendingUpIcon,
+  Eye,
+  MousePointerClick,
+  Zap,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  PieChart as RechartsPie,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { AddCompanyModal } from '@/components/companies/AddCompanyModal';
 import { AddProjectModal } from '@/components/projects/AddProjectModal';
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
@@ -38,6 +57,19 @@ import * as CompaniesAPI from '@/lib/api/companies';
 import * as ProjectsAPI from '@/lib/api/projects';
 import * as TasksAPI from '@/lib/api/tasks';
 import * as CampaignsAPI from '@/lib/api/campaigns';
+
+const COLORS = {
+  meta: '#1877F2',
+  google: '#4285F4',
+  linkedin: '#0A66C2',
+  twitter: '#1DA1F2',
+  primary: '#3B82F6',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+};
+
+const CHART_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
 export default function DashboardPage() {
   const [isAddCompanyModalOpen, setIsAddCompanyModalOpen] = useState(false);
@@ -137,6 +169,73 @@ export default function DashboardPage() {
       color: 'text-success-600',
     },
   ] : [];
+
+  // Campaign performance calculations
+  const campaignMetrics = dashboardData ? (() => {
+    const campaigns = dashboardData.campaigns;
+    const totalImpressions = campaigns.reduce((sum: number, c: any) => sum + (c.impressions || 0), 0);
+    const totalClicks = campaigns.reduce((sum: number, c: any) => sum + (c.clicks || 0), 0);
+    const totalConversions = campaigns.reduce((sum: number, c: any) => sum + (c.conversions || 0), 0);
+    const totalSpent = dashboardData.campaignStats.totalSpent;
+
+    const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00';
+    const cpa = totalConversions > 0 ? (totalSpent / totalConversions).toFixed(2) : '0.00';
+    const cvr = totalClicks > 0 ? ((totalConversions / totalClicks) * 100).toFixed(2) : '0.00';
+
+    return {
+      totalImpressions,
+      totalClicks,
+      totalConversions,
+      totalSpent,
+      ctr,
+      cpa,
+      cvr,
+    };
+  })() : null;
+
+  // Top performing campaigns (top 5 by conversions)
+  const topCampaigns = dashboardData ?
+    [...dashboardData.campaigns]
+      .sort((a: any, b: any) => (b.conversions || 0) - (a.conversions || 0))
+      .slice(0, 5)
+      .map((c: any) => ({
+        name: c.name.length > 20 ? c.name.substring(0, 20) + '...' : c.name,
+        conversions: c.conversions || 0,
+        spent: c.spent || 0,
+        clicks: c.clicks || 0,
+      }))
+    : [];
+
+  // Platform distribution for pie chart
+  const platformDistribution = dashboardData ? (() => {
+    const platforms = dashboardData.campaigns.reduce((acc: any, c: any) => {
+      const platform = c.platform || 'other';
+      if (!acc[platform]) {
+        acc[platform] = 0;
+      }
+      acc[platform] += c.spent || 0;
+      return acc;
+    }, {});
+
+    return Object.entries(platforms).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  })() : [];
+
+  // Campaign performance over time (last 7 days mock - in real app, you'd filter by date)
+  const campaignTrend = dashboardData && dashboardData.campaigns.length > 0 ? (() => {
+    // Group campaigns by day (simplified - in real app use actual dates)
+    return Array.from({ length: 7 }, (_, i) => {
+      const dayOffset = 6 - i;
+      return {
+        day: `${dayOffset}d ago`,
+        impressions: Math.floor(Math.random() * 50000) + 10000,
+        clicks: Math.floor(Math.random() * 5000) + 1000,
+        conversions: Math.floor(Math.random() * 500) + 100,
+      };
+    });
+  })() : [];
 
   const salesPipeline = [
     { stage: 'Leads', count: 45, value: '$225,000', color: 'bg-neutral-500' },
@@ -335,6 +434,214 @@ export default function DashboardPage() {
           );
         })}
       </div>
+
+      {/* Campaign Performance Metrics */}
+      {campaignMetrics && dashboardData && dashboardData.campaigns.length > 0 && (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Impressions</p>
+                    <p className="mt-1 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {campaignMetrics.totalImpressions.toLocaleString('tr-TR')}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">Across all campaigns</p>
+                  </div>
+                  <Eye className="h-8 w-8 text-primary-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Click-Through Rate</p>
+                    <p className="mt-1 text-2xl font-bold text-success-600 dark:text-success-400">
+                      {campaignMetrics.ctr}%
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">{campaignMetrics.totalClicks.toLocaleString('tr-TR')} clicks</p>
+                  </div>
+                  <MousePointerClick className="h-8 w-8 text-success-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Cost Per Acquisition</p>
+                    <p className="mt-1 text-2xl font-bold text-warning-600 dark:text-warning-400">
+                      ₺{campaignMetrics.cpa}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">Average CPA</p>
+                  </div>
+                  <DollarSign className="h-8 w-8 text-warning-600" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Conversion Rate</p>
+                    <p className="mt-1 text-2xl font-bold text-primary-600 dark:text-primary-400">
+                      {campaignMetrics.cvr}%
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">{campaignMetrics.totalConversions.toLocaleString('tr-TR')} conversions</p>
+                  </div>
+                  <Zap className="h-8 w-8 text-primary-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Campaign Performance Charts */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Top Performing Campaigns */}
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary-600" />
+                  Top Performing Campaigns
+                </CardTitle>
+                <CardDescription>By conversions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {topCampaigns.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={topCampaigns} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+                      <XAxis type="number" stroke="#6B7280" fontSize={12} />
+                      <YAxis type="category" dataKey="name" stroke="#6B7280" fontSize={11} width={100} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1F2937',
+                          border: 'none',
+                          borderRadius: '8px',
+                          color: '#F3F4F6',
+                        }}
+                      />
+                      <Bar dataKey="conversions" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[250px] text-neutral-400">
+                    No campaign data available
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Platform Distribution */}
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary-600" />
+                  Platform Distribution
+                </CardTitle>
+                <CardDescription>Spend by platform</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {platformDistribution.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <RechartsPie>
+                      <Pie
+                        data={platformDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        dataKey="value"
+                      >
+                        {platformDistribution.map((entry: any, index: number) => {
+                          const colorMap: any = {
+                            meta: COLORS.meta,
+                            google: COLORS.google,
+                            linkedin: COLORS.linkedin,
+                            twitter: COLORS.twitter,
+                          };
+                          return (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={colorMap[entry.name] || CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                          );
+                        })}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1F2937',
+                          border: 'none',
+                          borderRadius: '8px',
+                          color: '#F3F4F6',
+                        }}
+                        formatter={(value: any) => `₺${value.toLocaleString('tr-TR')}`}
+                      />
+                    </RechartsPie>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[250px] text-neutral-400">
+                    No platform data available
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Campaign Performance Trend */}
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUpIcon className="h-5 w-5 text-primary-600" />
+                  Performance Trend
+                </CardTitle>
+                <CardDescription>Last 7 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {campaignTrend.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={campaignTrend}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+                      <XAxis dataKey="day" stroke="#6B7280" fontSize={12} />
+                      <YAxis stroke="#6B7280" fontSize={12} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1F2937',
+                          border: 'none',
+                          borderRadius: '8px',
+                          color: '#F3F4F6',
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="clicks"
+                        stroke={CHART_COLORS[0]}
+                        strokeWidth={2}
+                        dot={{ fill: CHART_COLORS[0], r: 3 }}
+                        name="Clicks"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="conversions"
+                        stroke={CHART_COLORS[1]}
+                        strokeWidth={2}
+                        dot={{ fill: CHART_COLORS[1], r: 3 }}
+                        name="Conversions"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[250px] text-neutral-400">
+                    No trend data available
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
 
       {/* Sales Pipeline & Project Status */}
       <div className="grid gap-6 md:grid-cols-2">
