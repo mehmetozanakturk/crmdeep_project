@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,14 +61,7 @@ export default function DealsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
 
-  // Load deals from Supabase
-  useEffect(() => {
-    if (currentOrganization) {
-      loadDeals();
-    }
-  }, [currentOrganization]);
-
-  const loadDeals = async () => {
+  const loadDeals = useCallback(async () => {
     if (!currentOrganization) return;
 
     try {
@@ -92,7 +85,14 @@ export default function DealsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentOrganization]);
+
+  // Load deals from Supabase
+  useEffect(() => {
+    if (currentOrganization) {
+      loadDeals();
+    }
+  }, [currentOrganization, loadDeals]);
 
   const stages: { key: DealStage; label: string; color: string }[] = [
     { key: 'lead', label: 'Lead', color: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200' },

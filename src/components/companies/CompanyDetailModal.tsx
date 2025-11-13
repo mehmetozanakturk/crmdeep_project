@@ -26,6 +26,7 @@ import {
   Plus,
   AlertCircle,
 } from 'lucide-react';
+import { type Company } from '@/app/dashboard/companies/page';
 
 interface Project {
   id: string;
@@ -36,34 +37,6 @@ interface Project {
   end_date?: string;
   budget?: string;
   progress: number;
-}
-
-interface Company {
-  id: string;
-  name: string;
-  logo?: string;
-  industry: string;
-  size: string;
-  revenue: string;
-  location: string;
-  website: string;
-  email: string;
-  phone: string;
-  contacts: number;
-  deals: number;
-  status: 'active' | 'prospect' | 'inactive';
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-  projects: Project[];
-  agreement_date?: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  relatedTasks: string[];
-  relatedNotes: string[];
-  relatedEvents: string[];
-  last_activity_date?: string;
-  total_revenue?: string;
-  description?: string;
 }
 
 interface CompanyDetailModalProps {
@@ -121,6 +94,8 @@ const getPriorityInfo = (priority: Company['priority']) => {
       return { label: 'Orta', color: 'bg-yellow-500 dark:bg-yellow-600' };
     case 'low':
       return { label: 'Düşük', color: 'bg-green-500 dark:bg-green-600' };
+    default:
+      return { label: 'Orta', color: 'bg-yellow-500 dark:bg-yellow-600' };
   }
 };
 
@@ -131,7 +106,7 @@ export function CompanyDetailModal({
   onEdit,
   onDelete,
 }: CompanyDetailModalProps) {
-  const priorityInfo = getPriorityInfo(company.priority);
+  const priorityInfo = getPriorityInfo(company.priority || 'medium');
 
   const handleEdit = () => {
     onOpenChange(false);
@@ -169,7 +144,7 @@ export function CompanyDetailModal({
                     {company.name}
                   </DialogTitle>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">{company.industry}</Badge>
+                    {company.industry && <Badge variant="secondary">{company.industry}</Badge>}
                     <Badge className={`${priorityInfo.color} text-white border-0`}>
                       {priorityInfo.label} Öncelik
                     </Badge>
@@ -298,7 +273,7 @@ export function CompanyDetailModal({
               <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 text-center">
                 <ListTodo className="mx-auto h-6 w-6 text-purple-600 dark:text-purple-400" />
                 <p className="mt-2 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                  {company.projects.length}
+                  {company.projects?.length || 0}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">Projeler</p>
               </div>
@@ -320,7 +295,7 @@ export function CompanyDetailModal({
               </Button>
             </div>
 
-            {company.projects.length === 0 ? (
+            {!company.projects || company.projects.length === 0 ? (
               <div className="rounded-lg border border-dashed border-neutral-300 dark:border-neutral-600 p-8 text-center">
                 <AlertCircle className="mx-auto h-8 w-8 text-neutral-400 dark:text-neutral-500" />
                 <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
@@ -398,21 +373,21 @@ export function CompanyDetailModal({
               <Button variant="outline" className="h-auto flex-col py-4">
                 <CalendarDays className="h-6 w-6 text-primary-600 dark:text-primary-400" />
                 <span className="mt-2 text-sm font-medium">
-                  {company.relatedEvents.length} Etkinlik
+                  {company.relatedEvents?.length || 0} Etkinlik
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
               </Button>
               <Button variant="outline" className="h-auto flex-col py-4">
                 <ListTodo className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                 <span className="mt-2 text-sm font-medium">
-                  {company.relatedTasks.length} Görev
+                  {company.relatedTasks?.length || 0} Görev
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
               </Button>
               <Button variant="outline" className="h-auto flex-col py-4">
                 <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 <span className="mt-2 text-sm font-medium">
-                  {company.relatedNotes.length} Not
+                  {company.relatedNotes?.length || 0} Not
                 </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400">Görüntüle</span>
               </Button>

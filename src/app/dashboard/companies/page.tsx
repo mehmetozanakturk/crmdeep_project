@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +36,17 @@ import { useOrganization } from '@/lib/hooks/useOrganization';
 import { createClient } from '@/lib/supabase/client';
 
 // Simplified Company interface to match database schema
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  status: 'planned' | 'in_progress' | 'completed' | 'on_hold';
+  start_date: string;
+  end_date?: string;
+  budget?: string;
+  progress: number;
+}
+
 export interface Company {
   id: string;
   organization_id: string;
@@ -54,6 +65,15 @@ export interface Company {
   tags: string[];
   created_at: string;
   updated_at: string;
+  projects?: Project[];
+  agreement_date?: string;
+  priority?: 'low' | 'medium' | 'high' | 'critical';
+  relatedTasks?: string[];
+  relatedNotes?: string[];
+  relatedEvents?: string[];
+  last_activity_date?: string;
+  total_revenue?: string;
+  description?: string;
 }
 
 const DEMO_COMPANIES_REMOVED = [
@@ -266,14 +286,7 @@ export default function CompaniesPage() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
 
-  // Load companies from Supabase
-  useEffect(() => {
-    if (currentOrganization) {
-      loadCompanies();
-    }
-  }, [currentOrganization]);
-
-  const loadCompanies = async () => {
+  const loadCompanies = useCallback(async () => {
     if (!currentOrganization) return;
 
     try {
@@ -297,20 +310,27 @@ export default function CompaniesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentOrganization]);
+
+  // Load companies from Supabase
+  useEffect(() => {
+    if (currentOrganization) {
+      loadCompanies();
+    }
+  }, [currentOrganization, loadCompanies]);
 
   const filteredCompanies = companies.filter((company) => {
     const matchesSearch =
       company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      company.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      company.location.toLowerCase().includes(searchQuery.toLowerCase());
+      (company.industry?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+      (company.location?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
 
     const matchesStatus = statusFilter === 'all' || company.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  const handleCompanyAdded = async (newCompany: Omit<Company, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => {
+  const handleCompanyAdded = async (newCompany: Company) => {
     if (!currentOrganization) return;
 
     try {

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { type Company } from '@/app/dashboard/companies/page';
 
 const companySchema = z.object({
   name: z.string().min(2, 'Firma adı en az 2 karakter olmalı'),
@@ -30,45 +31,6 @@ const companySchema = z.object({
 });
 
 type CompanyFormData = z.infer<typeof companySchema>;
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: 'planned' | 'in_progress' | 'completed' | 'on_hold';
-  start_date: string;
-  end_date?: string;
-  budget?: string;
-  progress: number;
-}
-
-interface Company {
-  id: string;
-  name: string;
-  logo?: string;
-  industry: string;
-  size: string;
-  revenue: string;
-  location: string;
-  website: string;
-  email: string;
-  phone: string;
-  contacts: number;
-  deals: number;
-  status: 'active' | 'prospect' | 'inactive';
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-  projects: Project[];
-  agreement_date?: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  relatedTasks: string[];
-  relatedNotes: string[];
-  relatedEvents: string[];
-  last_activity_date?: string;
-  total_revenue?: string;
-  description?: string;
-}
 
 interface AddCompanyModalProps {
   open: boolean;
@@ -94,7 +56,9 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
     try {
       const newCompany: Company = {
         id: Date.now().toString(),
+        organization_id: '',
         name: data.name,
+        logo: null,
         industry: data.industry,
         size: data.size,
         revenue: data.revenue || '',

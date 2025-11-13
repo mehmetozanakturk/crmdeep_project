@@ -14,6 +14,16 @@ import {
   Briefcase,
   Edit,
   Trash2,
+  Star,
+  MapPin,
+  Calendar,
+  Cake,
+  FileText,
+  CalendarDays,
+  ListTodo,
+  Plus,
+  Linkedin,
+  Twitter,
 } from 'lucide-react';
 
 interface ContactDetailModalProps {
@@ -38,6 +48,23 @@ const getStatusInfo = (status: Contact['status']) => {
       return { label: 'Aktif', variant: 'outline' as const };
     case 'inactive':
       return { label: 'Pasif', variant: 'outline' as const };
+    default:
+      return { label: 'Aktif', variant: 'outline' as const };
+  }
+};
+
+const getPriorityInfo = (priority: string) => {
+  switch (priority) {
+    case 'critical':
+      return { label: 'Kritik', color: 'bg-red-500 dark:bg-red-600' };
+    case 'high':
+      return { label: 'Yüksek', color: 'bg-orange-500 dark:bg-orange-600' };
+    case 'medium':
+      return { label: 'Orta', color: 'bg-yellow-500 dark:bg-yellow-600' };
+    case 'low':
+      return { label: 'Düşük', color: 'bg-green-500 dark:bg-green-600' };
+    default:
+      return { label: 'Orta', color: 'bg-yellow-500 dark:bg-yellow-600' };
   }
 };
 
@@ -48,7 +75,6 @@ export function ContactDetailModal({
   onEdit,
   onDelete,
 }: ContactDetailModalProps) {
-  const priorityInfo = getPriorityInfo(contact.priority || 'medium');
   const statusInfo = getStatusInfo(contact.status);
 
   const handleEdit = () => {
@@ -105,9 +131,6 @@ export function ContactDetailModal({
                   )}
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                    <Badge className={`${priorityInfo.color} text-white border-0`}>
-                      {priorityInfo.label} Öncelik
-                    </Badge>
                     {contact.tags && contact.tags.length > 0 && (
                       contact.tags.map((tag) => (
                         <Badge key={tag} variant="outline" className="text-xs">

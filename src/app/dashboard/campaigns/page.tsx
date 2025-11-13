@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -67,17 +67,7 @@ export default function CampaignsPage() {
     landing_page_url: '',
   });
 
-  useEffect(() => {
-    if (currentOrganization) {
-      loadData();
-    }
-  }, [currentOrganization]);
-
-  useEffect(() => {
-    filterCampaigns();
-  }, [campaigns, selectedPlatform]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!currentOrganization) return;
 
     setIsLoading(true);
@@ -88,15 +78,25 @@ export default function CampaignsPage() {
     setCampaigns(campaignsData);
     setStats(statsData);
     setIsLoading(false);
-  };
+  }, [currentOrganization]);
 
-  const filterCampaigns = () => {
+  const filterCampaigns = useCallback(() => {
     if (selectedPlatform === 'all') {
       setFilteredCampaigns(campaigns);
     } else {
       setFilteredCampaigns(campaigns.filter((c) => c.platform === selectedPlatform));
     }
-  };
+  }, [campaigns, selectedPlatform]);
+
+  useEffect(() => {
+    if (currentOrganization) {
+      loadData();
+    }
+  }, [currentOrganization, loadData]);
+
+  useEffect(() => {
+    filterCampaigns();
+  }, [filterCampaigns]);
 
   const handleCreateCampaign = async () => {
     if (!currentOrganization) return;
@@ -580,7 +580,7 @@ export default function CampaignsPage() {
                 <Label htmlFor="campaign_type">Campaign Type</Label>
                 <Select
                   value={formData.campaign_type}
-                  onValueChange={(value: Campaign['campaign_type']) => setFormData({ ...formData, campaign_type: value })}
+                  onValueChange={(value) => setFormData({ ...formData, campaign_type: value as Campaign['campaign_type'] })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -699,7 +699,7 @@ export default function CampaignsPage() {
                 <Label htmlFor="edit-campaign_type">Campaign Type</Label>
                 <Select
                   value={formData.campaign_type}
-                  onValueChange={(value: Campaign['campaign_type']) => setFormData({ ...formData, campaign_type: value })}
+                  onValueChange={(value) => setFormData({ ...formData, campaign_type: value as Campaign['campaign_type'] })}
                 >
                   <SelectTrigger>
                     <SelectValue />

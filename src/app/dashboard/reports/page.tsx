@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,13 +33,7 @@ export default function ReportsPage() {
   const [editingReport, setEditingReport] = useState<CustomReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (currentOrganization) {
-      loadData();
-    }
-  }, [currentOrganization]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!currentOrganization) return;
 
     setIsLoading(true);
@@ -50,7 +44,13 @@ export default function ReportsPage() {
     setReports(reportsData);
     setStats(statsData);
     setIsLoading(false);
-  };
+  }, [currentOrganization]);
+
+  useEffect(() => {
+    if (currentOrganization) {
+      loadData();
+    }
+  }, [currentOrganization, loadData]);
 
   const handleSaveReport = async (reportConfig: ReportConfig) => {
     if (!currentOrganization) return;

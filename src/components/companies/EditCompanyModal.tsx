@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import { type Company } from '@/app/dashboard/companies/page';
 
 const companySchema = z.object({
   name: z.string().min(2, 'Firma adı en az 2 karakter olmalı'),
@@ -38,45 +39,6 @@ const companySchema = z.object({
 });
 
 type CompanyFormData = z.infer<typeof companySchema>;
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  status: 'planned' | 'in_progress' | 'completed' | 'on_hold';
-  start_date: string;
-  end_date?: string;
-  budget?: string;
-  progress: number;
-}
-
-interface Company {
-  id: string;
-  name: string;
-  logo?: string;
-  industry: string;
-  size: string;
-  revenue: string;
-  location: string;
-  website: string;
-  email: string;
-  phone: string;
-  contacts: number;
-  deals: number;
-  status: 'active' | 'prospect' | 'inactive';
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-  projects: Project[];
-  agreement_date?: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  relatedTasks: string[];
-  relatedNotes: string[];
-  relatedEvents: string[];
-  last_activity_date?: string;
-  total_revenue?: string;
-  description?: string;
-}
 
 interface EditCompanyModalProps {
   open: boolean;
@@ -99,13 +61,13 @@ export function EditCompanyModal({ open, onOpenChange, company, onCompanyUpdated
     resolver: zodResolver(companySchema),
     defaultValues: {
       name: company.name,
-      industry: company.industry,
-      size: company.size,
-      revenue: company.revenue,
-      location: company.location,
-      website: company.website,
-      email: company.email,
-      phone: company.phone,
+      industry: company.industry || '',
+      size: company.size || '',
+      revenue: company.revenue || '',
+      location: company.location || '',
+      website: company.website || '',
+      email: company.email || '',
+      phone: company.phone || '',
       status: company.status,
       tags: company.tags?.join(', ') || '',
     },
@@ -117,13 +79,13 @@ export function EditCompanyModal({ open, onOpenChange, company, onCompanyUpdated
     if (open) {
       reset({
         name: company.name,
-        industry: company.industry,
-        size: company.size,
-        revenue: company.revenue,
-        location: company.location,
-        website: company.website,
-        email: company.email,
-        phone: company.phone,
+        industry: company.industry || '',
+        size: company.size || '',
+        revenue: company.revenue || '',
+        location: company.location || '',
+        website: company.website || '',
+        email: company.email || '',
+        phone: company.phone || '',
         status: company.status,
         tags: company.tags?.join(', ') || '',
       });

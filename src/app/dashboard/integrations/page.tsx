@@ -538,7 +538,7 @@ export default function IntegrationsPage() {
                 <strong>How to get credentials:</strong>
               </p>
               <ol className="text-sm text-neutral-600 dark:text-neutral-400 mt-2 space-y-1 list-decimal list-inside">
-                <li>Go to the platform's developer portal</li>
+                <li>Go to the platform&apos;s developer portal</li>
                 <li>Create a new application or API key</li>
                 <li>Copy the credentials and paste them here</li>
               </ol>

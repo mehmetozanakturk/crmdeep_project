@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +49,21 @@ export interface Contact {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  is_key_contact?: boolean;
+  department?: string | null;
+  city?: string | null;
+  address?: string | null;
+  state?: string | null;
+  country?: string | null;
+  linkedin_url?: string | null;
+  twitter_url?: string | null;
+  last_contact_date?: string | null;
+  birthday?: string | null;
+  notes?: string | null;
+  relatedEvents?: string[];
+  relatedTasks?: string[];
+  relatedNotes?: string[];
+  priority?: string;
 }
 
 export default function ContactsPage() {
@@ -62,14 +77,7 @@ export default function ContactsPage() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
 
-  // Load contacts from Supabase
-  useEffect(() => {
-    if (currentOrganization) {
-      loadContacts();
-    }
-  }, [currentOrganization]);
-
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     if (!currentOrganization) return;
 
     try {
@@ -93,7 +101,14 @@ export default function ContactsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentOrganization]);
+
+  // Load contacts from Supabase
+  useEffect(() => {
+    if (currentOrganization) {
+      loadContacts();
+    }
+  }, [currentOrganization, loadContacts]);
 
   const filteredContacts = contacts.filter((contact) => {
     const matchesSearch =

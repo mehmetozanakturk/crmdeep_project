@@ -278,6 +278,7 @@ export async function getCampaignStats(organizationId: string) {
   const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
   const avgCPA = totalConversions > 0 ? totalSpent / totalConversions : 0;
   const avgCVR = totalClicks > 0 ? (totalConversions / totalClicks) * 100 : 0;
+  const avgROI = totalSpent > 0 ? ((totalBudget - totalSpent) / totalSpent) * 100 : 0;
 
   return {
     totalCampaigns: campaigns.length,
@@ -288,6 +289,7 @@ export async function getCampaignStats(organizationId: string) {
     totalImpressions,
     totalClicks,
     totalConversions,
+    avgROI,
     avgCTR,
     avgCPA,
     avgCVR,
