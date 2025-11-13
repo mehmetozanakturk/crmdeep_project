@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { TagSelector } from '@/components/ui/tag-selector';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'İsim en az 2 karakter olmalı'),
@@ -24,7 +25,6 @@ const contactSchema = z.object({
   phone: z.string().min(10, 'Telefon en az 10 karakter olmalı'),
   company: z.string().min(2, 'Firma adı gerekli'),
   position: z.string().optional(),
-  tags: z.string().optional(),
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
@@ -38,6 +38,7 @@ interface AddContactModalProps {
 
 export function AddContactModal({ open, onOpenChange, onContactAdded, organizationId }: AddContactModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const {
     register,
@@ -59,12 +60,13 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
         company_name: data.company,
         position: data.position || null,
         status: 'active',
-        tags: data.tags ? data.tags.split(',').map(t => t.trim()) : [],
+        tags: selectedTags,
         avatar_url: null,
       };
 
       await onContactAdded(newContact as any);
       reset();
+      setSelectedTags([]);
       onOpenChange(false);
     } catch (error) {
       console.error('Error adding contact:', error);
@@ -154,16 +156,13 @@ export function AddContactModal({ open, onOpenChange, onContactAdded, organizati
 
           {/* Tags */}
           <div>
-            <Label htmlFor="tags">Etiketler (virgülle ayırın)</Label>
-            <Input
-              id="tags"
-              placeholder="VIP, Lead, Karar Verici"
-              {...register('tags')}
-              className="mt-1"
+            <Label>Etiketler</Label>
+            <TagSelector
+              selectedTags={selectedTags}
+              onChange={setSelectedTags}
+              category="contacts"
+              placeholder="Etiket seç veya ekle..."
             />
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              Etiketleri virgülle ayırın
-            </p>
           </div>
 
           <DialogFooter>
