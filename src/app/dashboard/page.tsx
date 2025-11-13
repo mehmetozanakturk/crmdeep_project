@@ -182,14 +182,21 @@ export default function DashboardPage() {
     const cpa = totalConversions > 0 ? (totalSpent / totalConversions).toFixed(2) : '0.00';
     const cvr = totalClicks > 0 ? ((totalConversions / totalClicks) * 100).toFixed(2) : '0.00';
 
+    // ROI Calculation (assuming avg conversion value of ₺100)
+    const avgConversionValue = 100;
+    const totalRevenue = totalConversions * avgConversionValue;
+    const roi = totalSpent > 0 ? (((totalRevenue - totalSpent) / totalSpent) * 100).toFixed(1) : '0.0';
+
     return {
       totalImpressions,
       totalClicks,
       totalConversions,
       totalSpent,
+      totalRevenue,
       ctr,
       cpa,
       cvr,
+      roi,
     };
   })() : null;
 
@@ -637,6 +644,128 @@ export default function DashboardPage() {
                     No trend data available
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ROI Calculator & Conversion Summary */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* ROI Calculator */}
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-primary-600" />
+                  ROI Hesaplayıcı
+                </CardTitle>
+                <CardDescription>Kampanya yatırım getirisi analizi</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                    <div>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">Toplam Harcama</p>
+                      <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                        ₺{campaignMetrics.totalSpent.toLocaleString('tr-TR')}
+                      </p>
+                    </div>
+                    <ArrowUpRight className="h-8 w-8 text-danger-600" />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+                    <div>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">Tahmini Gelir</p>
+                      <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                        ₺{campaignMetrics.totalRevenue.toLocaleString('tr-TR')}
+                      </p>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        {campaignMetrics.totalConversions} dönüşüm × ₺100
+                      </p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-success-600" />
+                  </div>
+
+                  <div className={`p-6 rounded-lg ${parseFloat(campaignMetrics.roi) >= 0 ? 'bg-success-50 dark:bg-success-900/20' : 'bg-danger-50 dark:bg-danger-900/20'}`}>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">
+                        Yatırım Getirisi (ROI)
+                      </p>
+                      <p className={`text-4xl font-bold ${parseFloat(campaignMetrics.roi) >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'}`}>
+                        {parseFloat(campaignMetrics.roi) >= 0 ? '+' : ''}{campaignMetrics.roi}%
+                      </p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                        {parseFloat(campaignMetrics.roi) >= 0
+                          ? `₺${(campaignMetrics.totalRevenue - campaignMetrics.totalSpent).toLocaleString('tr-TR')} net kar`
+                          : `₺${(campaignMetrics.totalSpent - campaignMetrics.totalRevenue).toLocaleString('tr-TR')} zarar`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Conversion Funnel Summary */}
+            <Card className="border-neutral-200 dark:border-neutral-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary-600" />
+                  Dönüşüm Hunisi Özeti
+                </CardTitle>
+                <CardDescription>Kullanıcı yolculuğu genel bakış</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">Gösterimler</span>
+                      <span className="text-neutral-600 dark:text-neutral-400">
+                        {campaignMetrics.totalImpressions.toLocaleString('tr-TR')}
+                      </span>
+                    </div>
+                    <Progress value={100} className="h-3" />
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">Tıklamalar</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          {campaignMetrics.totalClicks.toLocaleString('tr-TR')}
+                        </span>
+                        <span className="text-xs text-primary-600">{campaignMetrics.ctr}%</span>
+                      </div>
+                    </div>
+                    <Progress value={parseFloat(campaignMetrics.ctr)} className="h-3" />
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span className="font-medium text-neutral-900 dark:text-neutral-100">Dönüşümler</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          {campaignMetrics.totalConversions.toLocaleString('tr-TR')}
+                        </span>
+                        <span className="text-xs text-success-600">{campaignMetrics.cvr}%</span>
+                      </div>
+                    </div>
+                    <Progress value={parseFloat(campaignMetrics.cvr)} className="h-3" />
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-3 gap-3">
+                    <div className="text-center p-3 rounded-lg bg-primary-50 dark:bg-primary-900/20">
+                      <p className="text-xs text-primary-700 dark:text-primary-400">CTR</p>
+                      <p className="text-lg font-bold text-primary-600 dark:text-primary-400">{campaignMetrics.ctr}%</p>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-warning-50 dark:bg-warning-900/20">
+                      <p className="text-xs text-warning-700 dark:text-warning-400">CPA</p>
+                      <p className="text-lg font-bold text-warning-600 dark:text-warning-400">₺{campaignMetrics.cpa}</p>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-success-50 dark:bg-success-900/20">
+                      <p className="text-xs text-success-700 dark:text-success-400">CVR</p>
+                      <p className="text-lg font-bold text-success-600 dark:text-success-400">{campaignMetrics.cvr}%</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
