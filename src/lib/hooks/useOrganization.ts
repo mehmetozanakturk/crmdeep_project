@@ -122,25 +122,12 @@ export function useOrganization() {
     try {
       console.log('Creating demo organization for user:', userId);
 
-      // Check if organization already exists
-      const { data: existingOrgs } = await supabase
-        .from('organizations')
-        .select('*')
-        .limit(1);
-
-      if (existingOrgs && existingOrgs.length > 0) {
-        setOrganizations(existingOrgs);
-        setCurrentOrganization(existingOrgs[0]);
-        setMemberRole('owner');
-        return;
-      }
-
       // Create new organization
       const { data: newOrg, error: createError } = await supabase
         .from('organizations')
         .insert({
           name: 'My Organization',
-          slug: `org-${userId.substring(0, 8)}`,
+          slug: `org-${userId.substring(0, 8)}-${Date.now()}`,
           owner_id: userId,
           subscription_plan: 'free',
         })
@@ -153,6 +140,24 @@ export function useOrganization() {
       }
 
       if (newOrg) {
+        console.log('Organization created successfully:', newOrg.id);
+
+        // CRITICAL: Add user to organization_members table
+        const { error: memberError } = await supabase
+          .from('organization_members')
+          .insert({
+            organization_id: newOrg.id,
+            user_id: userId,
+            role: 'owner',
+          });
+
+        if (memberError) {
+          console.error('Error adding user to organization_members:', memberError);
+          // Even if this fails, we can still set the organization locally
+        } else {
+          console.log('User added to organization_members successfully');
+        }
+
         setOrganizations([newOrg]);
         setCurrentOrganization(newOrg);
         setMemberRole('owner');
