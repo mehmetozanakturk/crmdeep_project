@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +18,8 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { TagSelector } from '@/components/ui/tag-selector';
 import { type Company } from '@/app/dashboard/companies/page';
+import { useOrganization } from '@/lib/hooks/useOrganization';
+import { createClient } from '@/lib/supabase/client';
 
 const companySchema = z.object({
   name: z.string().min(2, 'Firma adı en az 2 karakter olmalı'),
@@ -35,12 +37,14 @@ type CompanyFormData = z.infer<typeof companySchema>;
 interface AddCompanyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCompanyAdded: (company: Company) => void;
+  onCompanyAdded: (company?: Company) => void; // Parameter is optional - parent should reload companies from DB
 }
 
 export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompanyModalProps) {
+  const { currentOrganization } = useOrganization();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -51,45 +55,63 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
     resolver: zodResolver(companySchema),
   });
 
+  // Reset error state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setError(null);
+    }
+  }, [open]);
+
   const onSubmit = async (data: CompanyFormData) => {
+    // Check if organization is loaded
+    if (!currentOrganization) {
+      setError('Organizasyon bilgisi yüklenemedi. Lütfen sayfayı yenileyin.');
+      return;
+    }
+
     setIsSubmitting(true);
+    setError(null);
 
     try {
-      const newCompany: Company = {
-        id: Date.now().toString(),
-        organization_id: '',
-        name: data.name,
-        logo: null,
-        industry: data.industry,
-        size: data.size,
-        revenue: data.revenue || '',
-        location: data.location,
-        website: data.website || '',
-        email: data.email || '',
-        phone: data.phone || '',
-        contacts: 0,
-        deals: 0,
-        status: 'active',
-        tags: selectedTags,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        projects: [],
-        agreement_date: new Date().toISOString(),
-        priority: 'medium',
-        relatedTasks: [],
-        relatedNotes: [],
-        relatedEvents: [],
-        last_activity_date: new Date().toISOString(),
-        total_revenue: undefined,
-        description: undefined,
-      };
+      const supabase = createClient();
 
-      onCompanyAdded(newCompany);
+      // Insert the new company into the database
+      const { data: insertedCompany, error: insertError } = await supabase
+        .from('companies')
+        .insert({
+          organization_id: currentOrganization.id,
+          name: data.name,
+          industry: data.industry,
+          size: data.size,
+          revenue: data.revenue || null,
+          location: data.location,
+          website: data.website || null,
+          email: data.email || null,
+          phone: data.phone || null,
+          contacts: 0,
+          deals: 0,
+          status: 'active',
+          tags: selectedTags,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating company:', insertError);
+        setError('Firma oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.');
+        return;
+      }
+
+      // Success! Reset form and close modal
       reset();
       setSelectedTags([]);
       onOpenChange(false);
+
+      // Notify parent to reload companies from database
+      onCompanyAdded();
     } catch (error) {
       console.error('Error adding company:', error);
+      setError('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSubmitting(false);
     }
@@ -104,6 +126,12 @@ export function AddCompanyModal({ open, onOpenChange, onCompanyAdded }: AddCompa
             Yeni firma bilgilerini girin
           </DialogDescription>
         </DialogHeader>
+
+        {error && (
+          <div className="rounded-md bg-danger-50 dark:bg-danger-900/20 p-3 border border-danger-200 dark:border-danger-800">
+            <p className="text-sm text-danger-600 dark:text-danger-400">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">

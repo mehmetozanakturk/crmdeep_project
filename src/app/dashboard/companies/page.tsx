@@ -334,41 +334,9 @@ export default function CompaniesPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleCompanyAdded = async (newCompany: Company) => {
-    if (!currentOrganization) return;
-
-    try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('companies')
-        .insert({
-          organization_id: currentOrganization.id,
-          name: newCompany.name,
-          logo: newCompany.logo,
-          industry: newCompany.industry,
-          size: newCompany.size,
-          revenue: newCompany.revenue,
-          location: newCompany.location,
-          website: newCompany.website,
-          email: newCompany.email,
-          phone: newCompany.phone,
-          contacts: newCompany.contacts,
-          deals: newCompany.deals,
-          status: newCompany.status,
-          tags: newCompany.tags,
-        });
-
-      if (error) {
-        console.error('Error creating company:', error);
-        alert('Firma oluşturulurken hata oluştu');
-        return;
-      }
-
-      await loadCompanies();
-    } catch (error) {
-      console.error('Error creating company:', error);
-      alert('Firma oluşturulurken hata oluştu');
-    }
+  const handleCompanyAdded = async () => {
+    // The modal now handles the database insert, so we just need to reload companies
+    await loadCompanies();
   };
 
   const handleCompanyUpdated = async (updatedCompany: Company) => {
