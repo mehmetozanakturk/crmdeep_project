@@ -46,6 +46,8 @@ import {
 import { useOrganization } from '@/lib/hooks/useOrganization';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import type { DateRange } from 'react-day-picker';
 
 interface Deal {
   id: string;
@@ -98,6 +100,10 @@ const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'
 export default function DashboardPage() {
   const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    to: new Date(),
+  });
   const [stats, setStats] = useState<DashboardStats>({
     totalRevenue: 0,
     revenueChange: 0,
@@ -315,10 +321,10 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Son 30 gün
-          </Button>
+          <DateRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </div>
       </div>
 
